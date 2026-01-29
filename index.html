@@ -12,12 +12,22 @@
         :root { --blue: #3b82f6; --bg: #f0f4f8; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
         .glass-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
+        /* Collapsible Styling */
+        .collapsible-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 5px 0; }
+        .collapsible-header h3 { margin: 0; font-size: 18px; }
+        .arrow { transition: 0.3s; font-weight: bold; }
+        .content-area { display: none; padding-top: 15px; border-top: 1px solid #f1f5f9; margin-top: 10px; }
+        .active-content { display: block; }
+        .rotate { transform: rotate(180deg); }
+
         .search-box { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #e2e8f0; margin-bottom: 20px; font-size: 16px; outline: none; box-sizing: border-box; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: #e2e8f0; }
         .tab-btn.active { background: var(--blue); color: white; }
         .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; }
         .folder { background: white; padding: 15px; border-radius: 20px; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-weight: 600; font-size: 13px; }
+        .folder:hover { background: var(--blue); color: white; transform: translateY(-3px); }
         .book-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; }
         .btn-blue { background: var(--blue); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; }
         .hidden { display: none !important; }
@@ -45,17 +55,41 @@
 
     <div id="lib-view">
         <input type="text" id="libSearch" class="search-box" placeholder="🔍 Search library..." onkeyup="searchLib()">
-        <div class="glass-card"><h3>🕒 Recent Uploads</h3><div id="recent-list"></div></div>
-        <div class="glass-card"><h3>🔥 Trending Now</h3><div id="trending-list"></div></div>
+
         <div class="glass-card">
-            <h3>📂 Theological Categories</h3>
-            <div class="folder-grid">
-                <div class="folder" onclick="loadCat('Systematic Theology')">📖 Systematic Theology</div>
-                <div class="folder" onclick="loadCat('CHURCH History')">⛪ CHURCH History</div>
-                <div class="folder" onclick="loadCat('Mission')">🌍 Mission</div>
-                <div class="folder" onclick="loadCat('Acts of Apostles')">📜 Acts of Apostles</div>
-                <div class="folder" onclick="loadCat('Synoptic Gospel')">✝️ Synoptic Gospel</div>
-                <div class="folder" onclick="loadCat('Introduction to BIBLE')">📘 Intro to BIBLE</div>
+            <div class="collapsible-header" onclick="toggleSection('recent-content', this)">
+                <h3>🕒 Recent Uploads</h3>
+                <span class="arrow">▼</span>
+            </div>
+            <div id="recent-content" class="content-area">
+                <div id="recent-list"></div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="collapsible-header" onclick="toggleSection('trending-content', this)">
+                <h3>🔥 Trending Now</h3>
+                <span class="arrow">▼</span>
+            </div>
+            <div id="trending-content" class="content-area">
+                <div id="trending-list"></div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="collapsible-header" onclick="toggleSection('category-content', this)">
+                <h3>📂 Theological Categories</h3>
+                <span class="arrow">▼</span>
+            </div>
+            <div id="category-content" class="content-area">
+                <div class="folder-grid">
+                    <div class="folder" onclick="loadCat('Systematic Theology')">📖 Systematic Theology</div>
+                    <div class="folder" onclick="loadCat('CHURCH History')">⛪ CHURCH History</div>
+                    <div class="folder" onclick="loadCat('Mission')">🌍 Mission</div>
+                    <div class="folder" onclick="loadCat('Acts of Apostles')">📜 Acts of Apostles</div>
+                    <div class="folder" onclick="loadCat('Synoptic Gospel')">✝️ Synoptic Gospel</div>
+                    <div class="folder" onclick="loadCat('Introduction to BIBLE')">📘 Intro to BIBLE</div>
+                </div>
             </div>
         </div>
     </div>
@@ -66,13 +100,13 @@
             <p id="p-name"></p><button class="btn-blue" style="background:red" onclick="logout()">Logout</button>
         </div>
         <div class="glass-card">
-            <h3>📚 Borrowed Collection (Fine Schedule)</h3>
+            <h3>📚 Borrowed Collection</h3>
             <div id="borrowed-list"></div>
         </div>
     </div>
 
     <div id="cat-view" class="hidden">
-        <button onclick="document.getElementById('cat-view').classList.add('hidden')" class="btn-blue" style="background:#64748b;">← Back</button>
+        <button onclick="document.getElementById('cat-view').classList.add('hidden')" class="btn-blue" style="background:#64748b; margin-bottom:15px;">← Back</button>
         <h3 id="cat-name"></h3><div id="cat-list"></div>
     </div>
 </div>
@@ -99,6 +133,14 @@
     const auth = firebase.auth();
     let currentUser = null;
 
+    // Toggle Collapsible Sections
+    function toggleSection(id, header) {
+        const content = document.getElementById(id);
+        const arrow = header.querySelector('.arrow');
+        content.classList.toggle('active-content');
+        arrow.classList.toggle('rotate');
+    }
+
     auth.onAuthStateChanged(async user => {
         if(user) {
             currentUser = user;
@@ -118,15 +160,6 @@
         }
     });
 
-    async function borrowBook(id, title) {
-        if(prompt("Enter Borrow Code:") === "BORROW2026") {
-            await db.collection("borrows").add({
-                userId: currentUser.uid, bookId: id, title, borrowedAt: new Date().toISOString()
-            });
-            alert("Borrowed!");
-        }
-    }
-
     function listenToBorrows() {
         db.collection("borrows").where("userId", "==", currentUser.uid).onSnapshot(snap => {
             const list = document.getElementById('borrowed-list');
@@ -137,10 +170,9 @@
                 const diffDays = Math.ceil(Math.abs(new Date() - new Date(b.borrowedAt)) / (1000 * 60 * 60 * 24));
                 
                 let fineMsg = "";
-                if(diffDays <= 5) fineMsg = `<span style="color:green">${diffDays} Days (Free)</span>`;
-                else if(diffDays === 6) fineMsg = `<span style="color:green">6 Days (Free)</span>`;
-                else if(diffDays <= 9) fineMsg = `<span style="color:orange">${diffDays} Days (Fine: 10 RS)</span>`;
-                else if(diffDays <= 12) fineMsg = `<span style="color:red">${diffDays} Days (Fine: 25 RS)</span>`;
+                if(diffDays <= 6) fineMsg = `<span style="color:green">${diffDays} Days (Free)</span>`; //
+                else if(diffDays <= 9) fineMsg = `<span style="color:orange">${diffDays} Days (Fine: 10 RS)</span>`; //
+                else if(diffDays <= 12) fineMsg = `<span style="color:red">${diffDays} Days (Fine: 25 RS)</span>`; //
                 else fineMsg = `<span style="color:darkred">EXPIRED (Urgent Return)</span>`;
 
                 list.innerHTML += `<div class="book-item">
@@ -152,6 +184,15 @@
                 </div>`;
             });
         });
+    }
+
+    async function borrowBook(id, title) {
+        if(prompt("Enter Borrow Code:") === "BORROW2026") {
+            await db.collection("borrows").add({
+                userId: currentUser.uid, bookId: id, title, borrowedAt: new Date().toISOString()
+            });
+            alert("Borrowed!");
+        }
     }
 
     async function returnBook(borrowId, title) {
@@ -194,7 +235,7 @@
 
     function searchLib() {
         const q = document.getElementById('libSearch').value.toLowerCase();
-        document.querySelectorAll('#lib-view .book-item').forEach(el => {
+        document.querySelectorAll('.book-item').forEach(el => {
             el.style.display = el.dataset.title.includes(q) ? "flex" : "none";
         });
     }
