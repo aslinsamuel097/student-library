@@ -7,64 +7,33 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --blue: #3b82f6; --purple: #a855f7; --bg: #f0f4f8; --card: #ffffff; }
+        :root { --blue: #3b82f6; --purple: #a855f7; --bg: #f0f4f8; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
         .hidden { display: none !important; }
-        .glass-card { background: var(--card); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; }
-        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: #e2e8f0; }
-        .tab-btn.active { background: var(--blue); color: white; }
+        .glass-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; }
         .book-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-        .btn-sm { padding: 8px 15px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
-        .btn-blue { background: var(--blue); color: white; }
+        .btn-read { background: var(--blue); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; }
         #reader-overlay { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
 
-<div id="auth-screen" class="hidden">
-    <div class="glass-card" style="max-width:400px; margin:auto; text-align:center; margin-top:100px;">
-        <h2>Student Library</h2>
-        <button class="btn-sm btn-blue" style="width:100%; padding:15px;" onclick="signInWithGoogle()">Sign in with Google</button>
-        <div id="registration-form" class="hidden">
-            <input type="text" id="reg-inst" placeholder="Institution Name" style="width:100%; padding:10px; margin:10px 0;">
-            <select id="reg-position" style="width:100%; padding:10px; margin-bottom:10px;">
-                <option value="student">Student</option>
-                <option value="faculty">Faculty</option>
-            </select>
-            <button class="btn-sm btn-blue" style="width:100%;" onclick="saveRegistration()">Enter Library</button>
-        </div>
-    </div>
-</div>
-
-<div id="dashboard" class="hidden">
+<div id="dashboard">
     <header style="display:flex; justify-content:space-between; align-items:center;">
-        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1 id="user-welcome">Library</h1></div>
-        <button onclick="logout()" style="background:none; border:none; color:#94a3b8; cursor:pointer;">LOGOUT</button>
+        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1>Library</h1></div>
     </header>
 
-    <div class="nav-tabs">
-        <button id="tab-lib" class="tab-btn active" onclick="switchTab('library')">Library</button>
-        <button id="tab-prof" class="tab-btn" onclick="switchTab('profile')">Profile</button>
-    </div>
-
-    <div id="library-view">
-        <div class="glass-card"><h3>🕒 Recent Uploads</h3><div id="recent-list"></div></div>
-        <div class="glass-card"><h3>🔥 Trending Now</h3><div id="trending-list"></div></div>
-        <div class="glass-card"><h3>🎓 Faculty Recommendations</h3><div id="recommendation-list"></div></div>
-    </div>
-
-    <div id="profile-view" class="hidden">
-        <div class="glass-card"><h3>My Activity</h3><div id="profile-stats"></div></div>
-    </div>
+    <div class="glass-card"><h3>🕒 Recent Uploads (Top 5)</h3><div id="recent-list"></div></div>
+    <div class="glass-card"><h3>🔥 Trending Now (Top 10)</h3><div id="trending-list"></div></div>
+    <div class="glass-card"><h3>🎓 Faculty Recommendations</h3><div id="recommendation-list"></div></div>
 </div>
 
 <div id="reader-overlay" class="hidden">
     <div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between;">
         <span id="rtitle">Reading</span>
-        <button onclick="closeReader()" style="background:red; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">Exit</button>
+        <button onclick="document.getElementById('reader-overlay').classList.add('hidden')" style="background:red; color:white; border:none; padding:5px 15px; border-radius:5px;">Exit</button>
     </div>
     <iframe id="pdf-frame" src="" style="flex-grow:1; border:none;"></iframe>
 </div>
@@ -79,60 +48,40 @@
       appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth(); const db = firebase.firestore();
+    const db = firebase.firestore();
 
-    auth.onAuthStateChanged(async user => {
-        if (user) {
-            const doc = await db.collection("users").doc(user.uid).get();
-            if (doc.exists) { 
-                document.getElementById('dashboard').classList.remove('hidden');
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('user-welcome').innerText = "Hello, " + doc.data().fullName;
-                loadCategorizedLibrary();
-                setInterval(() => db.collection("users").doc(user.uid).update({ lastActive: new Date().toISOString() }), 60000);
-            } else { showRegistration(); }
-        } else { showLogin(); }
-    });
-
-    async function loadCategorizedLibrary() {
-        //
-        const settings = await db.collection("library_settings").get();
-        const recList = document.getElementById('recent-list');
-        const trendList = document.getElementById('trending-list');
+    async function loadLibrary() {
+        // Load Recent & Trending
+        const settings = await db.collection("library_settings").orderBy("updatedAt", "desc").get();
+        const rList = document.getElementById('recent-list');
+        const tList = document.getElementById('trending-list');
         
+        rList.innerHTML = ""; tList.innerHTML = "";
+
         settings.forEach(doc => {
             const s = doc.data();
-            const html = `<div class="book-row"><span>${doc.id} Textbook</span><button class="btn-sm btn-blue" onclick="openReader('public/${doc.id}_book_read_online.pdf', '${doc.id}')">Read</button></div>`;
-            if(s.recent) recList.innerHTML += html;
-            if(s.trending) trendList.innerHTML += html;
+            const html = `<div class="book-row"><span>${doc.id.toUpperCase()}</span><button class="btn-read" onclick="openPdf('${doc.id}')">Read</button></div>`;
+            if(s.recent) rList.innerHTML += html;
+            if(s.trending) tList.innerHTML += html;
         });
 
-        const facultySnap = await db.collection("recommendations").get();
-        const facList = document.getElementById('recommendation-list');
-        facultySnap.forEach(doc => {
+        // Load Unlimited Recommendations
+        const recSnap = await db.collection("recommendations").orderBy("timestamp", "desc").get();
+        const recList = document.getElementById('recommendation-list');
+        recList.innerHTML = "";
+        recSnap.forEach(doc => {
             const r = doc.data();
-            facList.innerHTML += `<div class="book-row"><span>Recommended by: <b>${r.facultyName}</b></span><button class="btn-sm btn-blue" onclick="openReader('public/${r.bookId}_book_read_online.pdf', '${r.bookId}')">Open</button></div>`;
+            recList.innerHTML += `<div class="book-row"><span><b>${r.facultyName}</b> recommends ${r.bookId.toUpperCase()}</span><button class="btn-read" onclick="openPdf('${r.bookId}')">Open</button></div>`;
         });
     }
 
-    function switchTab(tab) {
-        document.getElementById('library-view').classList.toggle('hidden', tab !== 'library');
-        document.getElementById('profile-view').classList.toggle('hidden', tab !== 'profile');
-        document.getElementById('tab-lib').classList.toggle('active', tab === 'library');
-        document.getElementById('tab-prof').classList.toggle('active', tab === 'profile');
-    }
-
-    function openReader(url, t) {
-        document.getElementById('rtitle').innerText = t;
-        document.getElementById('pdf-frame').src = url + "#toolbar=0";
+    function openPdf(id) {
+        document.getElementById('rtitle').innerText = "Reading: " + id;
+        document.getElementById('pdf-frame').src = `public/${id}_book_read_online.pdf#toolbar=0`;
         document.getElementById('reader-overlay').classList.remove('hidden');
     }
 
-    function closeReader() { document.getElementById('reader-overlay').classList.add('hidden'); }
-    function signInWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-    function showLogin() { document.getElementById('auth-screen').classList.remove('hidden'); }
-    function showRegistration() { document.getElementById('auth-screen').classList.remove('hidden'); document.getElementById('registration-form').classList.remove('hidden'); }
-    function logout() { auth.signOut().then(() => location.reload()); }
+    loadLibrary();
 </script>
 </body>
 </html>
