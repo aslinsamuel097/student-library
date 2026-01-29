@@ -11,113 +11,84 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --blue: #3b82f6; --purple: #a855f7; --bg: #f0f4f8; --card: rgba(255, 255, 255, 0.95); }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; overflow-x: hidden; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
         .hidden { display: none !important; }
         .glass-card { background: var(--card); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 20px; }
-        
-        /* Navigation Tabs */
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: #e2e8f0; color: #64748b; }
         .tab-btn.active { background: var(--blue); color: white; }
-
-        /* Search Bar */
         .search-box { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #e2e8f0; margin-bottom: 20px; font-size: 16px; outline: none; box-sizing: border-box; }
-
-        /* Profile Styles */
-        .profile-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-        .profile-row b { color: #64748b; }
-
-        /* Existing Buttons */
-        .btn-action { padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; font-size: 13px; transition: 0.2s; }
+        .btn-action { padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; font-size: 13px; }
         .btn-primary { background: var(--blue); color: white; }
-        .btn-borrow { background: #f1f5f9; color: #1e293b; }
-        
-        header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        #date-time { font-size: 12px; color: #94a3b8; font-weight: 600; margin-bottom: 15px; display: block; }
+        .btn-read-full { background: var(--purple); color: white; }
+        .profile-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
         #reader-overlay { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
+<div id="loading-screen" style="text-align:center; margin-top:100px;"><h3>Connecting...</h3></div>
+
 <div id="auth-screen" class="hidden">
-    <div class="glass-card animate__animated animate__fadeInUp" style="max-width: 400px; margin: auto; text-align: center; margin-top: 50px;">
+    <div class="glass-card animate__animated animate__fadeInUp" style="max-width:400px; margin:auto; text-align:center;">
         <h2>Student Library</h2>
-        <button id="login-btn" class="btn-action btn-primary" style="width:100%; padding:15px;" onclick="signInWithGoogle()">Sign in with Google</button>
+        <button id="login-btn" class="btn-action btn-primary" style="width:100%;" onclick="signInWithGoogle()">Sign in with Google</button>
         <div id="registration-form" class="hidden">
-            <h3>Complete Profile</h3>
-            <input type="text" id="reg-inst" placeholder="Institution Name" style="width:100%; padding:12px; margin-bottom:10px;">
-            <select id="reg-position" style="width:100%; padding:12px; margin-bottom:10px;">
-                <option value="student">Student</option><option value="faculty">Faculty</option>
-            </select>
-            <button class="btn-action btn-primary" onclick="saveRegistration()">Enter Library</button>
+            <input type="text" id="reg-inst" placeholder="Institution Name" required>
+            <select id="reg-position"><option value="student">Student</option><option value="faculty">Faculty</option></select>
+            <button class="btn-action btn-primary" onclick="saveRegistration()">Enter</button>
         </div>
     </div>
 </div>
 
-<div id="dashboard" class="hidden animate__animated animate__fadeIn">
-    <header>
-        <div>
-            <span style="color: var(--blue); font-weight: 800; font-size: 12px; letter-spacing: 1px;">JESUS IS THE SAVIOUR</span>
-            <h1 id="user-welcome" style="margin: 0;">Dashboard</h1>
-        </div>
-        <button onclick="logout()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight: 600;">LOGOUT</button>
+<div id="dashboard" class="hidden">
+    <header style="display:flex; justify-content:space-between;">
+        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1 id="user-welcome">Dashboard</h1></div>
+        <button onclick="logout()" style="background:none; border:none; color:#94a3b8; cursor:pointer;">LOGOUT</button>
     </header>
-    
-    <span id="date-time">Loading Date & Time...</span>
+    <span id="date-time" style="font-size:12px; color:#94a3b8;"></span>
 
     <div class="nav-tabs">
         <button id="tab-library" class="tab-btn active" onclick="switchTab('library')">Library</button>
-        <button id="tab-profile" class="tab-btn" onclick="switchTab('profile')">My Profile</button>
+        <button id="tab-profile" class="tab-btn" onclick="switchTab('profile')">Profile</button>
     </div>
 
     <div id="library-view">
-        <input type="text" id="searchBar" class="search-box" placeholder="🔍 Search for books, subjects, or keywords..." onkeyup="searchBooks()">
-        
+        <input type="text" id="searchBar" class="search-box" placeholder="Search books..." onkeyup="searchBooks()">
         <div class="glass-card">
-            <h3 style="margin-top:0; font-size: 14px; color: #64748b;">AVAILABLE RESOURCES</h3>
+            <h3 style="font-size:14px; color:#64748b;">RESOURCES</h3>
             <div id="available-list">
                 <div class="book-item" data-title="Science Textbook">
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #f1f5f9;">
-                        <div><b>Science Textbook</b><br><small style="color:#94a3b8;">Full Version Available</small></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee;">
+                        <span>Science Textbook</span>
                         <div>
                             <button onclick="openReader('public/science_book_read_online.pdf', 'Science Preview')" class="btn-action btn-primary">Read</button>
-                            <button onclick="borrowBook('Science Textbook', 'public/science_book.pdf')" class="btn-action btn-borrow">Borrow</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="book-item" data-title="Math Lesson Plan">
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0;">
-                        <div><b>Math Lesson Plan</b><br><small style="color:#94a3b8;">Lesson Plans</small></div>
-                        <div>
-                            <button onclick="openReader('public/math_lesson_read_online.pdf', 'Math Preview')" class="btn-action btn-primary">Read</button>
-                            <button onclick="borrowBook('Math Lesson Plan', 'public/math_lesson.pdf')" class="btn-action btn-borrow">Borrow</button>
+                            <button onclick="borrowBook('Science Textbook', 'public/science_book.pdf')" class="btn-action">Borrow</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="glass-card">
+            <h3 style="font-size:14px; color:var(--purple);">ACTIVE BORROWS</h3>
+            <div id="dashboard-borrowed-list">Loading borrowed books...</div>
+        </div>
     </div>
 
     <div id="profile-view" class="hidden">
         <div class="glass-card">
-            <h3 style="margin-top:0; color:var(--blue);">Student Profile</h3>
-            <div class="profile-row"><b>User Name</b> <span id="p-name">Loading...</span></div>
-            <div class="profile-row"><b>Email ID</b> <span id="p-email">Loading...</span></div>
-            <div class="profile-row"><b>Institution</b> <span id="p-inst">Loading...</span></div>
-            <div class="profile-row"><b>Total App Time</b> <span id="p-apptime">0m 0s</span></div>
-            <div class="profile-row"><b>Total Reading Time</b> <span id="p-readtime">0m 0s</span></div>
-        </div>
-
-        <div class="glass-card">
-            <h3 style="margin-top:0; color:var(--purple);">Currently Borrowed</h3>
-            <div id="p-borrowed-list"><small>No active borrows.</small></div>
+            <h3>My Info</h3>
+            <div class="profile-row"><b>Email</b> <span id="p-email"></span></div>
+            <div class="profile-row"><b>Institution</b> <span id="p-inst"></span></div>
+            <div class="profile-row"><b>Total App Use</b> <span id="p-apptime"></span></div>
+            <div class="profile-row"><b>Total Reading</b> <span id="p-readtime"></span></div>
         </div>
     </div>
 </div>
 
 <div id="reader-overlay" class="hidden">
-    <div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between; align-items:center;">
-        <span id="rtitle">Reading Mode</span>
+    <div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between;">
+        <span id="rtitle">Reading</span>
         <button onclick="closeReader()" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">Exit</button>
     </div>
     <iframe id="pdf-frame" src="" style="flex-grow:1; border:none;"></iframe>
@@ -136,24 +107,9 @@
     const auth = firebase.auth(); const db = firebase.firestore();
     let sessionStart, readingStart, currBook;
 
-    // --- DATE & TIME ---
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('date-time').innerText = now.toLocaleString();
-    }
+    function updateClock() { document.getElementById('date-time').innerText = new Date().toLocaleString(); }
     setInterval(updateClock, 1000);
 
-    // --- SEARCH LOGIC ---
-    function searchBooks() {
-        let input = document.getElementById('searchBar').value.toLowerCase();
-        let items = document.getElementsByClassName('book-item');
-        for (let i = 0; i < items.length; i++) {
-            let title = items[i].getAttribute('data-title').toLowerCase();
-            items[i].style.display = title.includes(input) ? "" : "none";
-        }
-    }
-
-    // --- TAB SWITCHING ---
     function switchTab(tab) {
         document.getElementById('library-view').classList.toggle('hidden', tab !== 'library');
         document.getElementById('profile-view').classList.toggle('hidden', tab !== 'profile');
@@ -166,72 +122,70 @@
         if (user) {
             sessionStart = Date.now();
             const doc = await db.collection("users").doc(user.uid).get();
+            document.getElementById('loading-screen').classList.add('hidden');
             if (doc.exists) { 
-                showDashboard(doc.data()); 
-                // Pulse Live Status
+                document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('user-welcome').innerText = "Hello, " + doc.data().fullName;
+                loadBorrowedBooks(); 
                 setInterval(() => db.collection("users").doc(user.uid).update({ lastActive: new Date().toISOString() }), 60000);
             } else { showRegistration(); }
         } else { showLogin(); }
     });
 
-    async function loadProfileData() {
-        const user = auth.currentUser;
-        const userDoc = await db.collection("users").doc(user.uid).get();
-        const data = userDoc.data();
-        
-        document.getElementById('p-name').innerText = data.fullName;
-        document.getElementById('p-email').innerText = data.email;
-        document.getElementById('p-inst').innerText = data.institution;
-
-        // Load Stats from activity_logs
-        const logs = await db.collection("activity_logs").where("userName", "==", user.displayName).get();
-        let appMinutes = 0, readMinutes = 0;
-        logs.forEach(log => {
-            let d = log.data();
-            let mins = parseInt(d.duration) || 0;
-            if(d.activityType === "Total App Usage") appMinutes += mins;
-            else readMinutes += mins;
-        });
-        document.getElementById('p-apptime').innerText = appMinutes + "m Total";
-        document.getElementById('p-readtime').innerText = readMinutes + "m Total";
-
-        // Load Borrowed
-        const borrowSnap = await db.collection("borrows").where("userId", "==", user.uid).get();
-        const pList = document.getElementById('p-borrowed-list');
-        pList.innerHTML = "";
-        borrowSnap.forEach(doc => {
+    async function loadBorrowedBooks() {
+        const snap = await db.collection("borrows").where("userId", "==", auth.currentUser.uid).get();
+        const list = document.getElementById('dashboard-borrowed-list');
+        list.innerHTML = snap.empty ? "No books borrowed." : "";
+        snap.forEach(doc => {
             const d = doc.data();
-            const daysLeft = Math.ceil((new Date(d.expiresOn) - new Date()) / (1000*60*60*24));
-            pList.innerHTML += `<div class="profile-row"><b>${d.title}</b> <span>Return in: ${daysLeft > 0 ? daysLeft : 0} days</span></div>`;
+            list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
+                <span>${d.title}</span>
+                <button onclick="openReader('${d.url}', 'Borrowed: ${d.title}')" class="btn-action btn-read-full">Open</button>
+            </div>`;
         });
     }
 
-    async function borrowBook(title, url) {
-        const user = auth.currentUser;
-        // DUPLICATE CHECK
-        const existing = await db.collection("borrows").where("userId", "==", user.uid).where("title", "==", title).get();
-        if(!existing.empty) {
-            alert("Lock: You have already borrowed this book. Please return or wait for expiry.");
-            return;
-        }
+    async function loadProfileData() {
+        const u = auth.currentUser;
+        const doc = await db.collection("users").doc(u.uid).get();
+        document.getElementById('p-email').innerText = u.email;
+        document.getElementById('p-inst').innerText = doc.data().institution;
 
-        const code = prompt("Enter Borrow Code (BORROW2026):");
-        if(code === "BORROW2026") {
+        const logs = await db.collection("activity_logs").where("userName", "==", u.displayName).get();
+        let appSecs = 0, readSecs = 0;
+        logs.forEach(log => {
+            let d = log.data();
+            let parts = d.duration.match(/\d+/g);
+            let secs = (parseInt(parts[0]) * 60) + (parseInt(parts[1]) || 0);
+            if(d.activityType === "Total App Usage") appSecs += secs;
+            else readSecs += secs;
+        });
+        document.getElementById('p-apptime').innerText = Math.floor(appSecs/60) + "m " + (appSecs%60) + "s";
+        document.getElementById('p-readtime').innerText = Math.floor(readSecs/60) + "m " + (readSecs%60) + "s";
+    }
+
+    async function borrowBook(title, url) {
+        const existing = await db.collection("borrows").where("userId", "==", auth.currentUser.uid).where("title", "==", title).get();
+        if(!existing.empty) return alert("You already have this book!");
+        if(prompt("Code (BORROW2026):") === "BORROW2026") {
             const exp = new Date(); exp.setDate(exp.getDate() + 5);
-            await db.collection("borrows").add({ title, url, userId: user.uid, expiresOn: exp.toISOString() });
-            alert("Borrowed Successfully!");
+            await db.collection("borrows").add({ title, url, userId: auth.currentUser.uid, expiresOn: exp.toISOString() });
             location.reload();
         }
     }
 
-    function showDashboard(u) { document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('user-welcome').innerText = "Hello, " + u.fullName.split(' ')[0]; }
-    function showRegistration() { document.getElementById('auth-screen').classList.remove('hidden'); document.getElementById('registration-form').classList.remove('hidden'); document.getElementById('login-btn').classList.add('hidden'); }
-    function showLogin() { document.getElementById('auth-screen').classList.remove('hidden'); document.getElementById('dashboard').classList.add('hidden'); }
-    function logout() { auth.signOut().then(() => location.reload()); }
+    function signInWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    function showLogin() { document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('auth-screen').classList.remove('hidden'); }
+    function showRegistration() { document.getElementById('auth-screen').classList.remove('hidden'); document.getElementById('login-btn').classList.add('hidden'); document.getElementById('registration-form').classList.remove('hidden'); }
+    async function logout() { 
+        const dur = Math.floor((Date.now() - sessionStart) / 1000);
+        await db.collection("activity_logs").add({ userName: auth.currentUser.displayName, activityType: "Total App Usage", duration: Math.floor(dur/60)+"m "+(dur%60)+"s", timestamp: new Date().toISOString() });
+        auth.signOut().then(() => location.reload()); 
+    }
     function openReader(url, t) { currBook = t; readingStart = Date.now(); document.getElementById('rtitle').innerText = t; document.getElementById('pdf-frame').src = url + "#toolbar=0"; document.getElementById('reader-overlay').classList.remove('hidden'); }
     async function closeReader() { 
         const dur = Math.floor((Date.now() - readingStart) / 1000);
-        await db.collection("activity_logs").add({ userName: auth.currentUser.displayName, activityType: "Reading: "+currBook, duration: Math.floor(dur/60)+"m "+(dur%60)+"s", timestamp: new Date().toISOString() });
+        if(dur > 2) await db.collection("activity_logs").add({ userName: auth.currentUser.displayName, activityType: "Reading: "+currBook, duration: Math.floor(dur/60)+"m "+(dur%60)+"s", timestamp: new Date().toISOString() });
         document.getElementById('reader-overlay').classList.add('hidden'); 
     }
 </script>
