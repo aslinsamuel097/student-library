@@ -59,14 +59,30 @@
     </div>
 
     <div id="cat-view" class="hidden" style="margin-top: 20px;">
-        <button onclick="document.getElementById('cat-view').classList.add('hidden')">← Folders</button>
+        <button onclick="document.getElementById('cat-view').classList.add('hidden')">← Back to Folders</button>
         <h3 id="cat-name">Category</h3>
         <div id="cat-list"></div>
     </div>
 </div>
 
+<div id="reader-overlay" class="hidden">
+    <div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between; align-items:center;">
+        <span id="rtitle">Reading Mode</span>
+        <button onclick="document.getElementById('reader-overlay').classList.add('hidden')" style="background:red; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">Exit</button>
+    </div>
+    <iframe id="pdf-frame" src="" style="flex-grow:1; border:none;"></iframe>
+</div>
+
 <script>
-    // Initialize Firebase...
+    const firebaseConfig = {
+      apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg",
+      authDomain: "student-library-4a4e7.firebaseapp.com",
+      projectId: "student-library-4a4e7",
+      storageBucket: "student-library-4a4e7.firebasestorage.app",
+      messagingSenderId: "827419448917",
+      appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc"
+    };
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     function renderBook(id, title) {
@@ -85,12 +101,29 @@
         rList.innerHTML = ""; tList.innerHTML = "";
         snap.forEach(doc => { 
             const b = doc.data();
-            if(b.recent) rList.innerHTML += renderBook(doc.id, b.title); 
-            if(b.trending) tList.innerHTML += renderBook(doc.id, b.title); 
+            if(b.recent) rList.innerHTML += renderBook(doc.id, b.title || doc.id); 
+            if(b.trending) tList.innerHTML += renderBook(doc.id, b.title || doc.id); 
         });
     });
 
-    // Faculty Recommendations and loadCat logic here...
+    db.collection("recommendations").onSnapshot(snap => {
+        const recList = document.getElementById('recommendation-list');
+        recList.innerHTML = "";
+        snap.forEach(doc => {
+            const r = doc.data();
+            recList.innerHTML += `<div class="book-item"><span><b>${r.facultyName}</b> recommends ${r.bookId.toUpperCase()}</span><button class="btn-blue" onclick="openPdf('${r.bookId}', '_read_online')">Open</button></div>`;
+        });
+    });
+
+    async function loadCat(name) {
+        document.getElementById('cat-name').innerText = name;
+        document.getElementById('cat-view').classList.remove('hidden');
+        const snap = await db.collection("library_settings").where("category", "==", name).get();
+        const list = document.getElementById('cat-list');
+        list.innerHTML = snap.empty ? "<p>No books yet in this category.</p>" : "";
+        snap.forEach(doc => list.innerHTML += renderBook(doc.id, doc.data().title || doc.id));
+    }
+
     function searchLib() {
         const query = document.getElementById('libSearch').value.toLowerCase();
         document.querySelectorAll('.book-item').forEach(el => {
@@ -98,7 +131,13 @@
         });
     }
 
-    function borrowFull(id) { if(prompt("Enter Code:") === "BORROW2026") alert("Full Book Granted!"); }
+    function openPdf(id, suffix) {
+        document.getElementById('rtitle').innerText = "Reading Preview";
+        document.getElementById('pdf-frame').src = `public/${id}${suffix}.pdf#toolbar=0`;
+        document.getElementById('reader-overlay').classList.remove('hidden');
+    }
+
+    function borrowFull(id) { if(prompt("Enter Code:") === "BORROW2026") alert("Full Book Access Granted!"); }
 </script>
 </body>
 </html>
