@@ -13,9 +13,11 @@
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
         .glass-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .search-box { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #e2e8f0; margin-bottom: 20px; font-size: 16px; outline: none; box-sizing: border-box; }
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: #e2e8f0; }
+        .tab-btn.active { background: var(--blue); color: white; }
         .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; }
-        .folder { background: white; padding: 15px; border-radius: 20px; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-weight: 600; font-size: 13px; transition: 0.3s; }
-        .folder:hover { background: var(--blue); color: white; transform: translateY(-3px); }
+        .folder { background: white; padding: 15px; border-radius: 20px; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-weight: 600; font-size: 13px; }
         .book-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; }
         .btn-blue { background: var(--blue); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; }
         .hidden { display: none !important; }
@@ -26,49 +28,60 @@
 
 <div id="dashboard">
     <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1 style="margin:0;">Theological Library</h1></div>
+        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1 style="margin:0;">Library</h1></div>
     </header>
 
-    <input type="text" id="libSearch" class="search-box" placeholder="🔍 Search for books, authors, categories..." onkeyup="searchLib()">
-
-    <div class="glass-card">
-        <h3>🕒 Recent Uploads</h3>
-        <div id="recent-list"></div>
+    <div class="nav-tabs">
+        <button id="t-lib" class="tab-btn active" onclick="switchMainTab('lib')">Library</button>
+        <button id="t-prof" class="tab-btn" onclick="switchMainTab('prof')">Profile</button>
     </div>
 
-    <div class="glass-card">
-        <h3>🔥 Trending Now</h3>
-        <div id="trending-list"></div>
+    <div id="lib-view">
+        <input type="text" id="libSearch" class="search-box" placeholder="🔍 Search books, categories..." onkeyup="searchLib()">
+
+        <div class="glass-card">
+            <h3>🕒 Recent Uploads</h3>
+            <div id="recent-list"></div>
+        </div>
+
+        <div class="glass-card">
+            <h3>🎓 Recommendations</h3>
+            <div id="recommendation-list"></div>
+        </div>
+
+        <div class="glass-card">
+            <h3>📂 Book Categories</h3>
+            <div class="folder-grid">
+                <div class="folder" onclick="loadCat('Systematic Theology')">📖<br>Theology</div>
+                <div class="folder" onclick="loadCat('CHURCH History')">⛪<br>Church History</div>
+                <div class="folder" onclick="loadCat('Mission')">🌍<br>Mission</div>
+                <div class="folder" onclick="loadCat('Acts of Apostles')">📜<br>Acts</div>
+                <div class="folder" onclick="loadCat('Synoptic Gospel')">✝️<br>Gospel</div>
+                <div class="folder" onclick="loadCat('Introduction to BIBLE')">📘<br>Bible Intro</div>
+            </div>
+        </div>
     </div>
 
-    <div class="glass-card">
-        <h3>🎓 Faculty Recommendations</h3>
-        <div id="recommendation-list"></div>
-    </div>
-
-    <div class="glass-card">
-        <h3>📂 Book Categories</h3>
-        <div class="folder-grid">
-            <div class="folder" onclick="loadCat('Systematic Theology')">📖<br>Systematic Theology</div>
-            <div class="folder" onclick="loadCat('CHURCH History')">⛪<br>CHURCH History</div>
-            <div class="folder" onclick="loadCat('Mission')">🌍<br>Mission</div>
-            <div class="folder" onclick="loadCat('Acts of Apostles')">📜<br>Acts of Apostles</div>
-            <div class="folder" onclick="loadCat('Synoptic Gospel')">✝️<br>Synoptic Gospel</div>
-            <div class="folder" onclick="loadCat('Introduction to BIBLE')">📘<br>Intro to BIBLE</div>
+    <div id="prof-view" class="hidden">
+        <div class="glass-card">
+            <h3>Student Profile</h3>
+            <p id="p-name"></p>
+            <p id="p-email"></p>
+            <button class="btn-blue" style="background:red; margin-top:20px;" onclick="logout()">Logout</button>
         </div>
     </div>
 
     <div id="cat-view" class="hidden" style="margin-top: 20px;">
-        <button onclick="document.getElementById('cat-view').classList.add('hidden')">← Back to Folders</button>
+        <button onclick="document.getElementById('cat-view').classList.add('hidden')">← Back</button>
         <h3 id="cat-name">Category</h3>
         <div id="cat-list"></div>
     </div>
 </div>
 
 <div id="reader-overlay" class="hidden">
-    <div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between; align-items:center;">
-        <span id="rtitle">Reading Mode</span>
-        <button onclick="document.getElementById('reader-overlay').classList.add('hidden')" style="background:red; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">Exit</button>
+    <div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between;">
+        <span id="rtitle">Reading Preview</span>
+        <button onclick="document.getElementById('reader-overlay').classList.add('hidden')" style="background:red; color:white; border:none; padding:8px 15px; border-radius:8px;">Exit</button>
     </div>
     <iframe id="pdf-frame" src="" style="flex-grow:1; border:none;"></iframe>
 </div>
@@ -84,6 +97,22 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    function switchMainTab(t) {
+        document.getElementById('lib-view').classList.toggle('hidden', t !== 'lib');
+        document.getElementById('prof-view').classList.toggle('hidden', t !== 'prof');
+        document.getElementById('t-lib').classList.toggle('active', t === 'lib');
+        document.getElementById('t-prof').classList.toggle('active', t === 'prof');
+    }
+
+    auth.onAuthStateChanged(async user => {
+        if(user) {
+            document.getElementById('p-name').innerText = "Name: " + user.displayName;
+            document.getElementById('p-email').innerText = "Email: " + user.email;
+            db.collection("users").doc(user.uid).update({ lastActive: new Date().toISOString() });
+        }
+    });
 
     function renderBook(id, title) {
         return `<div class="book-item" data-title="${title.toLowerCase()}">
@@ -97,13 +126,8 @@
 
     db.collection("library_settings").onSnapshot(snap => {
         const rList = document.getElementById('recent-list');
-        const tList = document.getElementById('trending-list');
-        rList.innerHTML = ""; tList.innerHTML = "";
-        snap.forEach(doc => { 
-            const b = doc.data();
-            if(b.recent) rList.innerHTML += renderBook(doc.id, b.title || doc.id); 
-            if(b.trending) tList.innerHTML += renderBook(doc.id, b.title || doc.id); 
-        });
+        rList.innerHTML = "";
+        snap.forEach(doc => { if(doc.data().recent) rList.innerHTML += renderBook(doc.id, doc.data().title || doc.id); });
     });
 
     db.collection("recommendations").onSnapshot(snap => {
@@ -120,23 +144,23 @@
         document.getElementById('cat-view').classList.remove('hidden');
         const snap = await db.collection("library_settings").where("category", "==", name).get();
         const list = document.getElementById('cat-list');
-        list.innerHTML = snap.empty ? "<p>No books yet in this category.</p>" : "";
+        list.innerHTML = snap.empty ? "<p>No books found.</p>" : "";
         snap.forEach(doc => list.innerHTML += renderBook(doc.id, doc.data().title || doc.id));
     }
 
     function searchLib() {
-        const query = document.getElementById('libSearch').value.toLowerCase();
+        const q = document.getElementById('libSearch').value.toLowerCase();
         document.querySelectorAll('.book-item').forEach(el => {
-            el.style.display = el.dataset.title.includes(query) ? "flex" : "none";
+            el.style.display = el.dataset.title.includes(q) ? "flex" : "none";
         });
     }
 
-    function openPdf(id, suffix) {
-        document.getElementById('rtitle').innerText = "Reading Preview";
-        document.getElementById('pdf-frame').src = `public/${id}${suffix}.pdf#toolbar=0`;
+    function openPdf(id, s) {
+        document.getElementById('pdf-frame').src = `public/${id}${s}.pdf#toolbar=0`;
         document.getElementById('reader-overlay').classList.remove('hidden');
     }
 
+    function logout() { auth.signOut().then(() => location.reload()); }
     function borrowFull(id) { if(prompt("Enter Code:") === "BORROW2026") alert("Full Book Access Granted!"); }
 </script>
 </body>
