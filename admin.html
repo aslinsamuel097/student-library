@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Control Center - Precise Logs</title>
+    <title>Admin Control Center - Data Fix</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -39,7 +39,7 @@
     <div class="card">
         <div class="card-header">
             <span>👥 Registered Members</span>
-            <small id="live-indicator">Real-time Dashboard</small>
+            <small id="live-indicator">Connected to Database</small>
         </div>
         <table id="memberTable">
             <thead>
@@ -87,7 +87,7 @@
 
     auth.onAuthStateChanged(user => {
         if(user && user.email === "phlagongkk@gmail.com") { loadMembers(); }
-        else { window.location.href = "index.html"; }
+        else if (user) { window.location.href = "index.html"; }
     });
 
     async function loadMembers() {
@@ -106,7 +106,7 @@
                 <td><b>${u.fullName}</b></td>
                 <td>${u.email}</td>
                 <td>${u.institution || 'N/A'}</td>
-                <td style="color: var(--blue); font-weight:600;">Open Folder →</td>
+                <td style="color: var(--blue); font-weight:600;">View Folders →</td>
             `;
             tbody.appendChild(row);
         });
@@ -117,10 +117,17 @@
         document.getElementById('m-user-name').innerText = user.fullName;
         document.getElementById('m-user-email').innerText = user.email;
         document.getElementById('user-overlay').classList.remove('hidden');
-        document.getElementById('sub-detail-content').innerHTML = `<p style="text-align: center;">Loading folders...</p>`;
+        document.getElementById('sub-detail-content').innerHTML = `<p style="text-align: center;">Opening Folders for ${user.fullName}...</p>`;
 
-        const logSnap = await db.collection("activity_logs").where("userName", "==", user.fullName).orderBy("timestamp", "desc").get();
-        userLogs = logSnap.docs.map(d => d.data());
+        // Fetch logs by User Email (more reliable than name)
+        const logSnap = await db.collection("activity_logs").where("userEmail", "==", user.email).get();
+        // If no email logs found, fallback to name (for older records)
+        if (logSnap.empty) {
+            const fallbackSnap = await db.collection("activity_logs").where("userName", "==", user.fullName).get();
+            userLogs = fallbackSnap.docs.map(d => d.data());
+        } else {
+            userLogs = logSnap.docs.map(d => d.data());
+        }
 
         const borrowSnap = await db.collection("borrows").where("userId", "==", user.uid).get();
         userBorrows = borrowSnap.docs.map(d => d.data());
@@ -136,55 +143,54 @@
             let appSecs = 0, readSecs = 0, borrowReadSecs = 0;
             userLogs.forEach(l => {
                 let parts = l.duration.match(/\d+/g);
-                let s = parts ? (parseInt(parts[0])*60) + (parseInt(parts[1])||0) : 0;
+                let s = 0;
+                if(parts && parts.length >= 2) {
+                    s = (parseInt(parts[0])*60) + parseInt(parts[1]); //
+                } else if (parts && parts.length === 1) {
+                    s = parseInt(parts[0]) * 60; // Case for "6 min"
+                }
+
                 if(l.activityType === "Total App Usage") appSecs += s;
                 else if(l.activityType.includes("Preview")) readSecs += s;
                 else if(l.activityType.includes("Borrowed")) borrowReadSecs += s;
             });
+
             content.innerHTML = `
-                <div style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+                <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
                     <b>Total App Timing</b> <span>${Math.floor(appSecs/60)}m ${appSecs%60}s</span>
                 </div>
-                <div style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-                    <b>Read Online Timing</b> <span>${Math.floor(readSecs/60)}m ${readSecs%60}s</span>
+                <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+                    <b>Read Online Timing (Previews)</b> <span>${Math.floor(readSecs/60)}m ${readSecs%60}s</span>
                 </div>
-                <div style="padding:10px; display:flex; justify-content:space-between;">
+                <div style="padding:15px; display:flex; justify-content:space-between;">
                     <b>Borrowed Books Reading Time</b> <span>${Math.floor(borrowReadSecs/60)}m ${borrowReadSecs%60}s</span>
                 </div>
             `;
         } 
         else if(folder === 'borrowed-books') {
-            let html = `<table><thead><tr><th>Book</th><th>Exact Borrow Time</th><th>Expected Return</th><th>Status</th></tr></thead><tbody>`;
+            let html = `<table><thead><tr><th>Book Title</th><th>Borrow Status</th><th>Action Taken</th></tr></thead><tbody>`;
             
-            // Check current active borrows
             userBorrows.forEach(b => {
-                const borrowTime = b.borrowedAt ? new Date(b.borrowedAt).toLocaleString() : "Old Record";
                 html += `<tr>
                     <td>${b.title}</td>
-                    <td>${borrowTime}</td>
-                    <td>${new Date(b.expiresOn).toLocaleDateString()}</td>
-                    <td class="status-active">Current (Active)</td>
+                    <td class="status-active">Active Borrow</td>
+                    <td>Due: ${new Date(b.expiresOn).toLocaleDateString()}</td>
                 </tr>`;
             });
 
-            // Check activity logs for "Returned" actions
-            userLogs.filter(l => l.activityType.includes("Returned")).forEach(rl => {
+            userLogs.filter(l => l.activityType.includes("Borrowed")).forEach(bl => {
                 html += `<tr>
-                    <td>${rl.activityType.replace("Returned: ", "")}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td class="status-returned">Returned on ${new Date(rl.timestamp).toLocaleDateString()}</td>
+                    <td>${bl.activityType.replace("Reading: Borrowed: ", "")}</td>
+                    <td>History</td>
+                    <td>Accessed on ${new Date(bl.timestamp).toLocaleDateString()}</td>
                 </tr>`;
             });
 
-            if(userBorrows.length === 0 && !html.includes("Returned")) {
-                content.innerHTML = "<p style='text-align:center;'>No borrow history for this user.</p>";
-            } else {
-                content.innerHTML = html + "</tbody></table>";
-            }
+            content.innerHTML = (html === `<table><thead><tr><th>Book Title</th><th>Borrow Status</th><th>Action Taken</th></tr></thead><tbody>`) 
+                ? "<p style='text-align:center;'>No records found.</p>" : html + "</tbody></table>";
         }
         else if(folder === 'borrow-codes') {
-            content.innerHTML = `<p><b>Main Access Code:</b> BORROW2026</p>`;
+            content.innerHTML = `<p style='text-align:center;'><b>Current Library Code:</b> BORROW2026</p>`;
         }
     }
 
