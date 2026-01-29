@@ -11,13 +11,12 @@
     <style>
         :root { --blue: #3b82f6; --bg: #f0f4f8; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
-        .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
-        .folder { background: white; padding: 20px; border-radius: 20px; text-align: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; }
-        .folder:hover { transform: translateY(-5px); background: var(--blue); color: white; }
-        .folder i { font-size: 40px; display: block; margin-bottom: 10px; }
-        .book-row { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-sm { padding: 8px 15px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
-        .btn-read { background: var(--blue); color: white; }
+        .glass-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; }
+        .folder { background: white; padding: 15px; border-radius: 20px; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-weight: 600; font-size: 13px; }
+        .folder:hover { background: var(--blue); color: white; transform: translateY(-3px); transition: 0.3s; }
+        .book-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; }
+        .btn-blue { background: var(--blue); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; }
         .hidden { display: none !important; }
         #reader-overlay { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; }
     </style>
@@ -25,33 +24,38 @@
 <body>
 
 <div id="dashboard">
-    <header style="display:flex; justify-content:space-between; align-items:center;">
+    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1 style="margin:0;">Theological Library</h1></div>
     </header>
 
-    <div id="category-menu">
+    <div class="glass-card">
+        <h3>🕒 Recent Uploads</h3>
+        <div id="recent-list"></div>
+    </div>
+
+    <div class="glass-card">
         <h3>📂 Book Categories</h3>
         <div class="folder-grid">
-            <div class="folder" onclick="loadCategory('Systematic Theology')">📖<br>Systematic Theology</div>
-            <div class="folder" onclick="loadCategory('CHURCH History')">⛪<br>CHURCH History</div>
-            <div class="folder" onclick="loadCategory('Mission')">🌍<br>Mission</div>
-            <div class="folder" onclick="loadCategory('Acts of Apostles')">📜<br>Acts of Apostles</div>
-            <div class="folder" onclick="loadCategory('Synoptic Gospel')">✝️<br>Synoptic Gospel</div>
-            <div class="folder" onclick="loadCategory('Introduction to BIBLE')">📘<br>Intro to BIBLE</div>
+            <div class="folder" onclick="loadCat('Systematic Theology')">📖<br>Systematic Theology</div>
+            <div class="folder" onclick="loadCat('CHURCH History')">⛪<br>CHURCH History</div>
+            <div class="folder" onclick="loadCat('Mission')">🌍<br>Mission</div>
+            <div class="folder" onclick="loadCat('Acts of Apostles')">📜<br>Acts of Apostles</div>
+            <div class="folder" onclick="loadCat('Synoptic Gospel')">✝️<br>Synoptic Gospel</div>
+            <div class="folder" onclick="loadCat('Introduction to BIBLE')">📘<br>Intro to BIBLE</div>
         </div>
     </div>
 
-    <div id="category-display" class="hidden" style="margin-top: 30px;">
-        <button onclick="document.getElementById('category-display').classList.add('hidden')" style="margin-bottom:10px;">← Back to Folders</button>
-        <h3 id="cat-title">Category Name</h3>
-        <div id="cat-book-list"></div>
+    <div id="cat-view" class="hidden" style="margin-top: 20px;">
+        <button onclick="document.getElementById('cat-view').classList.add('hidden')">← Folders</button>
+        <h3 id="cat-name">Category</h3>
+        <div id="cat-list"></div>
     </div>
 </div>
 
 <div id="reader-overlay" class="hidden">
-    <div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between;">
+    <div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between; align-items:center;">
         <span id="rtitle">Reading Mode</span>
-        <button onclick="document.getElementById('reader-overlay').classList.add('hidden')" style="background:red; color:white; border:none; padding:5px 15px; border-radius:5px;">Exit</button>
+        <button onclick="document.getElementById('reader-overlay').classList.add('hidden')" style="background:red; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">Exit</button>
     </div>
     <iframe id="pdf-frame" src="" style="flex-grow:1; border:none;"></iframe>
 </div>
@@ -68,38 +72,38 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    async function loadCategory(catName) {
-        document.getElementById('cat-title').innerText = catName;
-        document.getElementById('category-display').classList.remove('hidden');
-        
-        const snap = await db.collection("library_settings").where("category", "==", catName).get();
-        const list = document.getElementById('cat-book-list');
-        list.innerHTML = snap.empty ? "<p>No books in this category yet.</p>" : "";
+    function renderBook(id, title) {
+        return `<div class="book-item">
+            <span><b>${title}</b></span>
+            <div>
+                <button class="btn-blue" onclick="openPdf('${id}', '_read_online')">Read Preview</button>
+                <button class="btn-blue" style="background:#eee; color:#1e293b; margin-left:5px;" onclick="borrowFull('${id}')">Borrow Full</button>
+            </div>
+        </div>`;
+    }
 
-        snap.forEach(doc => {
-            const b = doc.data();
-            list.innerHTML += `
-                <div class="book-row">
-                    <span><b>${b.title}</b></span>
-                    <div>
-                        <button class="btn-sm btn-read" onclick="openPdf('${doc.id}', '_read_online')">Read Preview</button>
-                        <button class="btn-sm" style="background:#eee" onclick="borrowFull('${b.title}', '${doc.id}')">Borrow Full</button>
-                    </div>
-                </div>`;
-        });
+    db.collection("library_settings").onSnapshot(snap => {
+        const rList = document.getElementById('recent-list');
+        rList.innerHTML = "";
+        snap.forEach(doc => { if(doc.data().recent) rList.innerHTML += renderBook(doc.id, doc.data().title); });
+    });
+
+    async function loadCat(name) {
+        document.getElementById('cat-name').innerText = name;
+        document.getElementById('cat-view').classList.remove('hidden');
+        const snap = await db.collection("library_settings").where("category", "==", name).get();
+        const list = document.getElementById('cat-list');
+        list.innerHTML = snap.empty ? "<p>No books yet.</p>" : "";
+        snap.forEach(doc => list.innerHTML += renderBook(doc.id, doc.data().title));
     }
 
     function openPdf(id, suffix) {
-        // Read Online only shows the 25 page version (suffix: _read_online)
         document.getElementById('pdf-frame').src = `public/${id}${suffix}.pdf#toolbar=0`;
         document.getElementById('reader-overlay').classList.remove('hidden');
     }
 
-    async function borrowFull(title, id) {
-        if(prompt("Enter Borrow Code:") === "BORROW2026") {
-            // Full version setup (as requested)
-            alert("Borrowing " + title + ". Access your full PDF in 'My Borrowed Books'");
-        }
+    function borrowFull(id) {
+        if(prompt("Enter Borrow Code:") === "BORROW2026") alert("Full Book Access Granted in 'My Borrowed Books'");
     }
 </script>
 </body>
