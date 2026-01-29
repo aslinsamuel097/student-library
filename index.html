@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jesus is the Saviour - Library</title>
+    <title>Jesus is the Saviour - Theological Library</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -12,6 +12,7 @@
         :root { --blue: #3b82f6; --bg: #f0f4f8; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
         .glass-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .search-box { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #e2e8f0; margin-bottom: 20px; font-size: 16px; outline: none; }
         .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; }
         .folder { background: white; padding: 15px; border-radius: 20px; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-weight: 600; font-size: 13px; transition: 0.3s; }
         .folder:hover { background: var(--blue); color: white; transform: translateY(-3px); }
@@ -28,6 +29,8 @@
         <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1 style="margin:0;">Theological Library</h1></div>
     </header>
 
+    <input type="text" id="libSearch" class="search-box" placeholder="🔍 Search for books, authors, or categories..." onkeyup="searchLibrary()">
+
     <div class="glass-card">
         <h3>🕒 Recent Uploads</h3>
         <div id="recent-list"></div>
@@ -36,6 +39,11 @@
     <div class="glass-card">
         <h3>🔥 Trending Now</h3>
         <div id="trending-list"></div>
+    </div>
+
+    <div class="glass-card">
+        <h3>🎓 Faculty Recommendations</h3>
+        <div id="recommendation-list"></div>
     </div>
 
     <div class="glass-card">
@@ -78,8 +86,8 @@
     const db = firebase.firestore();
 
     function renderBook(id, title) {
-        return `<div class="book-item">
-            <span><b>${title}</b></span>
+        return `<div class="book-item" data-title="${title.toLowerCase()}">
+            <span><b>${title || id}</b></span>
             <div>
                 <button class="btn-blue" onclick="openPdf('${id}', '_read_online')">Read Preview</button>
                 <button class="btn-blue" style="background:#eee; color:#1e293b; margin-left:5px;" onclick="borrowFull('${id}')">Borrow Full</button>
@@ -98,6 +106,15 @@
         });
     });
 
+    db.collection("recommendations").onSnapshot(snap => {
+        const recList = document.getElementById('recommendation-list');
+        recList.innerHTML = "";
+        snap.forEach(doc => {
+            const r = doc.data();
+            recList.innerHTML += `<div class="book-item"><span><b>${r.facultyName}</b> recommends ${r.bookId.toUpperCase()}</span><button class="btn-blue" onclick="openPdf('${r.bookId}', '_read_online')">Open</button></div>`;
+        });
+    });
+
     async function loadCat(name) {
         document.getElementById('cat-name').innerText = name;
         document.getElementById('cat-view').classList.remove('hidden');
@@ -107,15 +124,20 @@
         snap.forEach(doc => list.innerHTML += renderBook(doc.id, doc.data().title));
     }
 
+    function searchLibrary() {
+        const query = document.getElementById('libSearch').value.toLowerCase();
+        document.querySelectorAll('.book-item').forEach(item => {
+            item.style.display = item.getAttribute('data-title').includes(query) ? 'flex' : 'none';
+        });
+    }
+
     function openPdf(id, suffix) {
         document.getElementById('rtitle').innerText = "Reading Preview";
         document.getElementById('pdf-frame').src = `public/${id}${suffix}.pdf#toolbar=0`;
         document.getElementById('reader-overlay').classList.remove('hidden');
     }
 
-    function borrowFull(id) {
-        if(prompt("Enter Borrow Code:") === "BORROW2026") alert("Full Book Access Granted in 'My Borrowed Books'");
-    }
+    function borrowFull(id) { if(prompt("Enter Borrow Code:") === "BORROW2026") alert("Full Book Access Granted in 'My Borrowed Books'"); }
 </script>
 </body>
 </html>
