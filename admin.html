@@ -3,74 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Control Center - Live</title>
+    <title>Admin Control Center - High Level</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --blue: #3b82f6; --purple: #a855f7; --dark: #1e293b; --bg: #f8fafc; --green: #22c55e; }
+        :root { --blue: #3b82f6; --purple: #a855f7; --bg: #f8fafc; --dark: #1e293b; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
-        .container { max-width: 1150px; margin: auto; animation: fadeIn 0.8s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 3px solid var(--blue); padding-bottom: 15px; }
-        .card { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 30px; border: 1px solid rgba(0,0,0,0.02); }
-        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--blue); display: flex; align-items: center; gap: 10px; }
-        
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 15px; background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-
-        /* Live Status Pulse */
-        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .online { background-color: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
-        .offline { background-color: #cbd5e1; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-        .student { background: #dcfce7; color: #166534; }
-        .faculty { background: #fef9c3; color: #854d0e; }
-        .type-usage { background: #eff6ff; color: #1d4ed8; }
-        .type-reading { background: #f5f3ff; color: #6d28d9; }
+        .container { max-width: 1200px; margin: auto; }
         .hidden { display: none !important; }
+        
+        /* Dashboard Cards */
+        .card { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 25px; }
+        .card-header { font-weight: 600; color: var(--blue); border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        
+        /* Interactive Table */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; color: #64748b; font-size: 12px; text-transform: uppercase; background: #f1f5f9; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .clickable-row { cursor: pointer; transition: 0.2s; }
+        .clickable-row:hover { background: #eff6ff; }
+
+        /* User Detail Overlay */
+        #user-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .modal { background: white; width: 90%; max-width: 800px; height: 80vh; border-radius: 30px; overflow-y: auto; padding: 30px; position: relative; }
+        .close-btn { position: absolute; top: 20px; right: 20px; background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 10px; cursor: pointer; }
+
+        /* Folder/Tab Styling */
+        .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .folder { padding: 20px; border-radius: 15px; background: #f8fafc; border: 2px solid #e2e8f0; cursor: pointer; text-align: center; }
+        .folder:hover { border-color: var(--blue); background: white; }
+        .folder h4 { margin: 10px 0 0 0; color: #1e293b; }
+
+        /* Status Badges */
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .online { background: #dcfce7; color: #166534; }
+        .offline { background: #f1f5f9; color: #64748b; }
     </style>
 </head>
 <body>
 
-<div id="admin-panel" class="container hidden">
-    <div class="admin-header">
-        <h1>Library Admin Center</h1>
-        <div style="text-align: right;">
-            <span id="live-count" style="font-weight: bold; color: var(--green);">0 Students Online</span><br>
-            <small style="color: #94a3b8;">Refreshing every 30s</small>
+<div id="admin-main" class="container">
+    <div class="card">
+        <div class="card-header">
+            <span>👥 Registered Members</span>
+            <small id="live-indicator">Refreshing data...</small>
         </div>
-    </div>
-
-    <div class="card">
-        <div class="card-title">👥 Member Management & Live Status</div>
-        <table id="userTable">
+        <table id="memberTable">
             <thead>
-                <tr><th>Status</th><th>Name</th><th>Email</th><th>Institution</th><th>Position</th><th>WhatsApp</th></tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div class="card">
-        <div class="card-title">⏳ Student Activity Logs</div>
-        <table id="logTable">
-            <thead>
-                <tr><th>Student</th><th>Activity Type</th><th>Duration</th><th>Date & Time</th></tr>
+                <tr><th>Status</th><th>Name</th><th>Email</th><th>Institution</th><th>Action</th></tr>
             </thead>
             <tbody></tbody>
         </table>
     </div>
 </div>
 
-<div id="denied" class="container hidden" style="text-align: center; margin-top: 100px;">
-    <h1>🚫 Access Denied</h1>
-    <p>Restricted to <b>phlagongkk@gmail.com</b></p>
+<div id="user-overlay" class="hidden">
+    <div class="modal">
+        <button class="close-btn" onclick="closeUserDetail()">Back to List</button>
+        <h2 id="m-user-name">User Details</h2>
+        <p id="m-user-email" style="color: #64748b;"></p>
+
+        <div class="folder-grid">
+            <div class="folder" onclick="showSubDetail('app-timings')">📂 <h4>App Usage Timings</h4></div>
+            <div class="folder" onclick="showSubDetail('borrowed-books')">📂 <h4>Borrowed Books</h4></div>
+            <div class="folder" onclick="showSubDetail('borrow-codes')">📂 <h4>Borrow Code</h4></div>
+        </div>
+
+        <div id="sub-detail-content" class="card" style="min-height: 200px;">
+            <p style="text-align: center; color: #94a3b8;">Select a folder to view details</p>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -82,69 +86,101 @@
       messagingSenderId: "827419448917",
       appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc"
     };
-
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
-    const ADMIN_EMAIL = "phlagongkk@gmail.com";
+    const auth = firebase.auth();
 
-    auth.onAuthStateChanged(async (user) => {
-        if (user && user.email === ADMIN_EMAIL) {
-            document.getElementById('admin-panel').classList.remove('hidden');
-            loadAllData();
-            // Refresh live status every 30 seconds
-            setInterval(loadAllData, 30000);
-        } else {
-            document.getElementById('denied').classList.remove('hidden');
-        }
+    let selectedUser = null;
+    let userLogs = [];
+    let userBorrows = [];
+
+    auth.onAuthStateChanged(user => {
+        if(user && user.email === "phlagongkk@gmail.com") { loadMembers(); }
+        else { window.location.href = "index.html"; }
     });
 
-    async function loadAllData() {
-        const userSnap = await db.collection("users").get();
-        const userTbody = document.querySelector("#userTable tbody");
-        userTbody.innerHTML = "";
-        let onlineCount = 0;
-
-        userSnap.forEach(doc => {
+    async function loadMembers() {
+        const snap = await db.collection("users").get();
+        const tbody = document.querySelector("#memberTable tbody");
+        tbody.innerHTML = "";
+        
+        snap.forEach(doc => {
             const u = doc.data();
-            const now = Date.now();
             const lastActive = u.lastActive ? new Date(u.lastActive).getTime() : 0;
-            // If active in last 3 minutes, show as Online
-            const isOnline = (now - lastActive) < 180000; 
-            if(isOnline) onlineCount++;
+            const isOnline = (Date.now() - lastActive) < 180000;
 
-            userTbody.innerHTML += `
-                <tr>
-                    <td>
-                        <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
-                        <small>${isOnline ? 'Online' : 'Offline'}</small>
-                    </td>
-                    <td><b>${u.fullName}</b></td>
-                    <td>${u.email}</td>
-                    <td>${u.institution}</td>
-                    <td><span class="badge ${u.position}">${u.position}</span></td>
-                    <td>${u.whatsapp || 'N/A'}</td>
-                </tr>
+            const row = document.createElement('tr');
+            row.className = "clickable-row";
+            row.onclick = () => openUserDetail(u);
+            row.innerHTML = `
+                <td><span class="badge ${isOnline ? 'online' : 'offline'}">${isOnline ? 'Online' : 'Offline'}</span></td>
+                <td><b>${u.fullName}</b></td>
+                <td>${u.email}</td>
+                <td>${u.institution}</td>
+                <td style="color: var(--blue);">View Details →</td>
             `;
-        });
-        document.getElementById('live-count').innerText = `${onlineCount} Students Online`;
-
-        const logSnap = await db.collection("activity_logs").orderBy("timestamp", "desc").limit(30).get();
-        const logTbody = document.querySelector("#logTable tbody");
-        logTbody.innerHTML = "";
-        logSnap.forEach(doc => {
-            const l = doc.data();
-            const typeClass = l.activityType.includes("Usage") ? "type-usage" : "type-reading";
-            logTbody.innerHTML += `
-                <tr>
-                    <td>${l.userName}</td>
-                    <td><span class="badge ${typeClass}">${l.activityType}</span></td>
-                    <td><b>${l.duration}</b></td>
-                    <td style="color: #94a3b8; font-size: 12px;">${new Date(l.timestamp).toLocaleString()}</td>
-                </tr>
-            `;
+            tbody.appendChild(row);
         });
     }
+
+    async function openUserDetail(user) {
+        selectedUser = user;
+        document.getElementById('m-user-name').innerText = user.fullName;
+        document.getElementById('m-user-email').innerText = user.email;
+        document.getElementById('user-overlay').classList.remove('hidden');
+        document.getElementById('sub-detail-content').innerHTML = `<p style="text-align: center;">Fetching data for ${user.fullName}...</p>`;
+
+        // Fetch user data
+        const logSnap = await db.collection("activity_logs").where("userName", "==", user.fullName).get();
+        userLogs = logSnap.docs.map(d => d.data());
+
+        const borrowSnap = await db.collection("borrows").where("userId", "==", user.uid).get();
+        userBorrows = borrowSnap.docs.map(d => d.data());
+        
+        showSubDetail('app-timings'); // Default folder
+    }
+
+    function showSubDetail(folder) {
+        const content = document.getElementById('sub-detail-content');
+        content.innerHTML = "";
+
+        if(folder === 'app-timings') {
+            let appSecs = 0, readSecs = 0, borrowReadSecs = 0;
+            userLogs.forEach(l => {
+                let parts = l.duration.match(/\d+/g);
+                let s = parts ? (parseInt(parts[0])*60) + (parseInt(parts[1])||0) : 0;
+                if(l.activityType === "Total App Usage") appSecs += s;
+                else if(l.activityType.includes("Preview")) readSecs += s;
+                else if(l.activityType.includes("Borrowed")) borrowReadSecs += s;
+            });
+
+            content.innerHTML = `
+                <div class="profile-row" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
+                    <b>1. Total App Timing (All Activities)</b> <span>${Math.floor(appSecs/60)}m ${appSecs%60}s</span>
+                </div>
+                <div class="profile-row" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
+                    <b>2. Read Online Timing (Previews)</b> <span>${Math.floor(readSecs/60)}m ${readSecs%60}s</span>
+                </div>
+                <div class="profile-row" style="display:flex; justify-content:space-between; padding:10px;">
+                    <b>3. Borrowed Books Reading Time</b> <span>${Math.floor(borrowReadSecs/60)}m ${borrowReadSecs%60}s</span>
+                </div>
+            `;
+        } 
+        else if(folder === 'borrowed-books') {
+            if(userBorrows.length === 0) { content.innerHTML = "<p>No borrowed books history found.</p>"; return; }
+            let html = `<table><thead><tr><th>Book Title</th><th>Borrowed On</th><th>Due Date</th></tr></thead><tbody>`;
+            userBorrows.forEach(b => {
+                html += `<tr><td>${b.title}</td><td>Checked via Log</td><td>${new Date(b.expiresOn).toLocaleDateString()}</td></tr>`;
+            });
+            html += "</tbody></table>";
+            content.innerHTML = html;
+        }
+        else if(folder === 'borrow-codes') {
+            content.innerHTML = `<p><b>Active Borrow Code:</b> BORROW2026</p><p><i>Note: Individual codes coming soon.</i></p>`;
+        }
+    }
+
+    function closeUserDetail() { document.getElementById('user-overlay').classList.add('hidden'); }
 </script>
 </body>
 </html>
