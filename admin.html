@@ -36,7 +36,7 @@
         <h2>📂 Global PDF Inventory</h2>
         <div style="background: #f1f5f9; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
             <h4>Register New Uploaded PDF</h4>
-            <input type="text" id="reg-id" placeholder="Exact File Name (e.g., science)">
+            <input type="text" id="reg-id" placeholder="File Name (e.g., science)">
             <input type="text" id="reg-title" placeholder="Display Title (e.g., Science Textbook)">
             <select id="reg-cat">
                 <option value="Systematic Theology">Systematic Theology</option>
@@ -63,9 +63,9 @@
             </table>
         </div>
         <div class="card">
-            <h3>⏳ Student Activity Logs</h3>
+            <h3>⏳ Student Activity & Returns</h3>
             <table id="logTable">
-                <thead><tr><th>Student</th><th>Activity</th><th>Duration</th><th>Time</th></tr></thead>
+                <thead><tr><th>Student</th><th>Activity</th><th>Time</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -105,12 +105,11 @@
         snap.forEach(doc => {
             const b = doc.data();
             list.innerHTML += `<tr>
-                <td><b>${b.title || doc.id}</b><br><small>${doc.id}.pdf</small></td>
-                <td><span style="color:var(--blue)">${b.category || 'Uncategorized'}</span></td>
+                <td><b>${b.title || doc.id}</b></td>
+                <td>${b.category}</td>
                 <td>
                     <button class="btn-sm" style="background:#dcfce7" onclick="updatePromo('${doc.id}', 'recent', 5)">+ Recent</button>
                     <button class="btn-sm" style="background:#fef9c3" onclick="updatePromo('${doc.id}', 'trending', 10)">+ Trend</button>
-                    <button class="btn-sm" style="background:#f3e8ff" onclick="recommend('${doc.id}')">+ Recommend</button>
                 </td>
                 <td><button class="btn-sm" style="background:#fee2e2" onclick="deleteBook('${doc.id}')">Delete</button></td>
             </tr>`;
@@ -130,12 +129,12 @@
         });
     });
 
-    db.collection("activity_logs").orderBy("timestamp", "desc").limit(10).onSnapshot(snap => {
+    db.collection("activity_logs").orderBy("timestamp", "desc").limit(15).onSnapshot(snap => {
         const tbody = document.querySelector("#logTable tbody");
         tbody.innerHTML = "";
         snap.forEach(doc => {
             const l = doc.data();
-            tbody.innerHTML += `<tr><td>${l.userName}</td><td>${l.activityType}</td><td>${l.duration}</td><td>${new Date(l.timestamp).toLocaleTimeString()}</td></tr>`;
+            tbody.innerHTML += `<tr><td>${l.userName}</td><td>${l.activityType}</td><td>${new Date(l.timestamp).toLocaleString()}</td></tr>`;
         });
     });
 
@@ -146,11 +145,7 @@
             await db.collection("library_settings").doc(oldestDoc).update({ [cat]: false });
         }
         await db.collection("library_settings").doc(id).update({ [cat]: true, updatedAt: new Date().toISOString() });
-    }
-
-    async function recommend(id) {
-        const fName = prompt("Enter Faculty Name:");
-        if(fName) await db.collection("recommendations").add({ facultyName: fName, bookId: id, timestamp: new Date().toISOString() });
+        alert("Updated!");
     }
 
     async function deleteBook(id) { if(confirm("Delete this?")) await db.collection("library_settings").doc(id).delete(); }
