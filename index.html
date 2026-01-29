@@ -13,8 +13,8 @@
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
         .glass-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; }
-        .folder { background: white; padding: 15px; border-radius: 20px; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-weight: 600; font-size: 13px; }
-        .folder:hover { background: var(--blue); color: white; transform: translateY(-3px); transition: 0.3s; }
+        .folder { background: white; padding: 15px; border-radius: 20px; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-weight: 600; font-size: 13px; transition: 0.3s; }
+        .folder:hover { background: var(--blue); color: white; transform: translateY(-3px); }
         .book-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; }
         .btn-blue { background: var(--blue); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; }
         .hidden { display: none !important; }
@@ -34,6 +34,11 @@
     </div>
 
     <div class="glass-card">
+        <h3>🔥 Trending Now</h3>
+        <div id="trending-list"></div>
+    </div>
+
+    <div class="glass-card">
         <h3>📂 Book Categories</h3>
         <div class="folder-grid">
             <div class="folder" onclick="loadCat('Systematic Theology')">📖<br>Systematic Theology</div>
@@ -46,7 +51,7 @@
     </div>
 
     <div id="cat-view" class="hidden" style="margin-top: 20px;">
-        <button onclick="document.getElementById('cat-view').classList.add('hidden')">← Folders</button>
+        <button onclick="document.getElementById('cat-view').classList.add('hidden')">← Back to Folders</button>
         <h3 id="cat-name">Category</h3>
         <div id="cat-list"></div>
     </div>
@@ -84,8 +89,13 @@
 
     db.collection("library_settings").onSnapshot(snap => {
         const rList = document.getElementById('recent-list');
-        rList.innerHTML = "";
-        snap.forEach(doc => { if(doc.data().recent) rList.innerHTML += renderBook(doc.id, doc.data().title); });
+        const tList = document.getElementById('trending-list');
+        rList.innerHTML = ""; tList.innerHTML = "";
+        snap.forEach(doc => { 
+            const b = doc.data();
+            if(b.recent) rList.innerHTML += renderBook(doc.id, b.title); 
+            if(b.trending) tList.innerHTML += renderBook(doc.id, b.title); 
+        });
     });
 
     async function loadCat(name) {
@@ -93,11 +103,12 @@
         document.getElementById('cat-view').classList.remove('hidden');
         const snap = await db.collection("library_settings").where("category", "==", name).get();
         const list = document.getElementById('cat-list');
-        list.innerHTML = snap.empty ? "<p>No books yet.</p>" : "";
+        list.innerHTML = snap.empty ? "<p>No books yet in this category.</p>" : "";
         snap.forEach(doc => list.innerHTML += renderBook(doc.id, doc.data().title));
     }
 
     function openPdf(id, suffix) {
+        document.getElementById('rtitle').innerText = "Reading Preview";
         document.getElementById('pdf-frame').src = `public/${id}${suffix}.pdf#toolbar=0`;
         document.getElementById('reader-overlay').classList.remove('hidden');
     }
