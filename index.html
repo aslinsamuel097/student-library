@@ -3,137 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Admin Dashboard</title>
+    <title>Jesus is the Saviour - Student Library</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root {
-            --blue: #3b82f6; --orange: #f97316; --green: #10b981; --purple: #a855f7;
-            --bg: #f8fafc; --text-dark: #1e293b;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-dark); }
+        :root { --blue: #3b82f6; --orange: #f97316; --green: #10b981; --purple: #a855f7; --bg: #f8fafc; --text: #1e293b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
+        .hidden { display: none !important; }
         
+        /* Auth Screen */
+        #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; }
+        .auth-card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; }
+        .btn-google { background: white; border: 1px solid #ddd; padding: 12px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
+        
+        /* Form */
+        .form-group { margin-top: 15px; text-align: left; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; margin-top: 5px; box-sizing: border-box; }
+        
+        /* Dashboard */
         header { margin-bottom: 25px; }
-        header h1 { font-family: 'Cursive', serif; margin: 0; font-size: 24px; color: #1e293b; }
-        header p { margin: 5px 0; color: #64748b; font-size: 14px; }
-        .savior-badge { color: var(--blue); font-weight: bold; font-size: 18px; display: block; margin-bottom: 10px; }
-
-        /* Stat Cards Grid */
+        .savior-badge { color: var(--blue); font-weight: bold; font-size: 18px; display: block; margin-bottom: 5px; }
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
-        .stat-card { border-radius: 15px; padding: 20px; color: white; position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .stat-card h3 { margin: 0; font-size: 14px; font-weight: 400; opacity: 0.9; }
-        .stat-card .number { font-size: 28px; font-weight: bold; margin-top: 10px; display: block; }
+        .stat-card { border-radius: 18px; padding: 20px; color: white; }
+        .bg-blue { background: var(--blue); } .bg-purple { background: var(--purple); }
         
-        .bg-blue { background: var(--blue); }
-        .bg-orange { background: var(--orange); }
-        .bg-green { background: var(--green); }
-        .bg-purple { background: var(--purple); }
-
-        /* Book List Area */
-        .content-section { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .section-header h2 { font-size: 18px; margin: 0; }
-        
-        .book-item { display: flex; align-items: center; padding: 15px 0; border-bottom: 1px solid #f1f5f9; }
-        .book-icon { width: 45px; height: 45px; background: #fff7ed; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px; color: #f97316; font-size: 20px; }
-        .book-details { flex-grow: 1; }
-        .book-details b { display: block; font-size: 15px; }
-        .book-details span { font-size: 12px; color: #94a3b8; }
-        
-        .action-btns { display: flex; gap: 8px; }
-        .btn { border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; text-decoration: none; }
-        .btn-read { background: #eff6ff; color: var(--blue); }
-        .btn-dl { background: #f1f5f9; color: var(--text-dark); }
-
-        /* Navigation Bar (Bottom) */
-        .nav-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 10px 30px; border-radius: 50px; display: flex; gap: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .nav-item { text-align: center; color: #94a3b8; font-size: 11px; cursor: pointer; text-decoration: none; }
-        .nav-item.active { color: var(--blue); }
-        .nav-item i { display: block; font-size: 20px; margin-bottom: 3px; }
+        .book-item { background: white; display: flex; align-items: center; padding: 18px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .btn-action { background: #eff6ff; color: var(--blue); border: none; padding: 8px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 13px; }
     </style>
 </head>
 <body>
 
-<header>
-    <span class="savior-badge">JESUS is the Saviour</span>
-    <h1>Library Admin</h1>
-    <p>Dashboard Overview</p>
-</header>
+<div id="auth-screen">
+    <div class="auth-card">
+        <h2 id="auth-title">Student Library</h2>
+        <p id="auth-sub" style="color: #64748b; font-size: 14px;">Sign in with Google to continue</p>
+        
+        <button id="login-btn" class="btn-google" onclick="signInWithGoogle()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Sign in with Google
+        </button>
 
-<div class="stats-grid">
-    <div class="stat-card bg-blue">
-        <h3>Total Books</h3>
-        <span class="number">20</span>
-    </div>
-    <div class="stat-card bg-orange">
-        <h3>Issued</h3>
-        <span class="number">2</span>
-    </div>
-    <div class="stat-card bg-green">
-        <h3>Available</h3>
-        <span class="number">11</span>
-    </div>
-    <div class="stat-card bg-purple">
-        <h3>Members</h3>
-        <span class="number" id="memberCount">120</span>
-    </div>
-</div>
-
-<div class="content-section">
-    <div class="section-header">
-        <h2>Available Books</h2>
-    </div>
-
-    <div class="book-item">
-        <div class="book-icon">📖</div>
-        <div class="book-details">
-            <b>Science Textbook</b>
-            <span>Uploaded: 2026-01-28</span>
-        </div>
-        <div class="actions">
-            <a href="public/science_book.pdf" target="_blank" class="btn btn-read">Read</a>
-            <button onclick="askCode('public/science_book.pdf')" class="btn btn-dl">Download</button>
-        </div>
-    </div>
-
-    <div class="book-item">
-        <div class="book-icon">📖</div>
-        <div class="book-details">
-            <b>Math Lesson Plan</b>
-            <span>Uploaded: 2026-01-28</span>
-        </div>
-        <div class="actions">
-            <a href="public/math_lesson.pdf" target="_blank" class="btn btn-read">Read</a>
-            <button onclick="askCode('public/math_lesson.pdf')" class="btn btn-dl">Download</button>
+        <div id="registration-form" class="hidden">
+            <div class="form-group"><label>WhatsApp Number</label><input type="text" id="reg-whatsapp" placeholder="Optional"></div>
+            <div class="form-group"><label>Institution Name</label><input type="text" id="reg-inst" placeholder="College Name" required></div>
+            <div class="form-group">
+                <label>Position</label>
+                <select id="reg-position"><option value="student">Student</option><option value="faculty">Faculty</option></select>
+            </div>
+            <button class="btn-google" style="background: var(--blue); color: white; border: none; margin-top: 20px;" onclick="saveRegistration()">Complete Setup</button>
         </div>
     </div>
 </div>
 
-<div class="nav-bar">
-    <div class="nav-item active">🏠<br>Home</div>
-    <div class="nav-item">📚<br>Books</div>
-    <div class="nav-item">🔄<br>Returns</div>
+<div id="dashboard" class="hidden">
+    <header>
+        <span class="savior-badge">JESUS is the Saviour</span>
+        <h1 id="user-welcome" style="margin: 0; font-size: 22px;">Library Admin</h1>
+        <button onclick="logout()" style="border: none; background: none; color: #94a3b8; cursor: pointer;">Sign Out</button>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card bg-blue"><h3>Books</h3><span style="font-size: 28px; font-weight: bold;">20</span></div>
+        <div class="stat-card bg-purple"><h3>Members</h3><span id="memberCount" style="font-size: 28px; font-weight: bold;">120</span></div>
+    </div>
+
+    <div class="book-list">
+        <h3 style="font-size: 16px; color: #64748b;">AVAILABLE BOOKS</h3>
+        <div class="book-item">
+            <div style="flex-grow: 1;"><b>Science Textbook</b><br><small style="color: #94a3b8;">PDF Document</small></div>
+            <a href="public/science_book.pdf" target="_blank" class="btn-action">Read Online</a>
+        </div>
+    </div>
 </div>
 
 <script>
-    // Verification system for downloads
-    function askCode(fileUrl) {
-        const validCodes = ["1234", "5678", "2026"]; 
-        let userCode = prompt("Enter Student ID Card Number to Download:");
-        
-        if (validCodes.includes(userCode)) {
-            const link = document.createElement('a');
-            link.href = fileUrl;
-            link.download = fileUrl.split('/').pop();
-            link.click();
-        } else {
-            alert("Access Denied. Please contact Admin.");
-        }
+    // Your actual configuration from your screenshot
+    const firebaseConfig = {
+      apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg",
+      authDomain: "student-library-4a4e7.firebaseapp.com",
+      projectId: "student-library-4a4e7",
+      storageBucket: "student-library-4a4e7.firebasestorage.app",
+      messagingSenderId: "827419448917",
+      appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Login Function
+    function signInWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(err => alert("Error: " + err.message));
     }
 
-    // Small effect to show "Active" members changing
-    setInterval(() => {
-        let base = 120;
-        document.getElementById('memberCount').innerText = base + Math.floor(Math.random() * 5);
-    }, 5000);
+    // Check Login Status
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const userDoc = await db.collection("users").doc(user.uid).get();
+            if (userDoc.exists) { 
+                showDashboard(userDoc.data()); 
+            } else { 
+                showRegistration(); 
+            }
+        } else { 
+            showLogin(); 
+        }
+    });
+
+    function showRegistration() {
+        document.getElementById('login-btn').classList.add('hidden');
+        document.getElementById('registration-form').classList.remove('hidden');
+        document.getElementById('auth-title').innerText = "Finish Registration";
+    }
+
+    async function saveRegistration() {
+        const user = auth.currentUser;
+        const data = {
+            fullName: user.displayName,
+            email: user.email,
+            whatsapp: document.getElementById('reg-whatsapp').value,
+            institution: document.getElementById('reg-inst').value,
+            position: document.getElementById('reg-position').value,
+            uid: user.uid,
+            joinedAt: new Date().toISOString()
+        };
+        await db.collection("users").doc(user.uid).set(data);
+        showDashboard(data);
+    }
+
+    function showDashboard(userData) {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        document.getElementById('user-welcome').innerText = "Hello, " + userData.fullName.split(' ')[0];
+    }
+
+    function showLogin() {
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('dashboard').classList.add('hidden');
+        document.getElementById('login-btn').classList.remove('hidden');
+    }
+
+    function logout() { auth.signOut(); }
 </script>
 
 </body>
