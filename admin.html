@@ -3,62 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Admin Control - Auto-Rotate</title>
+    <title>Library Admin - Content Manager</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --blue: #3b82f6; --purple: #a855f7; --bg: #f8fafc; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); padding: 20px; }
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        table { width: 100%; border-collapse: collapse; }
-        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; }
-        .btn-sm { padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; margin: 2px; }
+        :root { --blue: #3b82f6; --green: #22c55e; --red: #ef4444; --bg: #f8fafc; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
+        .container { max-width: 1000px; margin: auto; }
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-box { padding: 20px; border-radius: 15px; text-align: center; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .btn { padding: 8px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; margin: 2px; }
         .btn-add { background: #dcfce7; color: #166534; }
         .btn-rem { background: #fee2e2; color: #ef4444; }
-        .btn-purp { background: #f3e8ff; color: #6b21a8; }
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
         .hidden { display: none !important; }
+        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
         .modal { background: white; width: 90%; max-width: 500px; border-radius: 20px; padding: 25px; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 style="color:var(--blue); margin-top:0;">📂 Content Manager</h2>
-    <p style="font-size:12px; color:#64748b;">Recent: Max 5 | Trending: Max 10 | Recommendations: Unlimited</p>
-    <table>
-        <thead><tr style="text-align:left; font-size:11px; color:#94a3b8;"><th>PDF NAME</th><th>CATEGORIES</th></tr></thead>
-        <tbody>
-            <tr>
-                <td><b>Science Textbook</b></td>
-                <td>
-                    <button class="btn-sm btn-add" onclick="markAuto('science', 'recent', 5)">+ Recent</button>
-                    <button class="btn-sm btn-add" onclick="markAuto('science', 'trending', 10)">+ Trending</button>
-                    <button class="btn-sm btn-purp" onclick="openFacModal('science')">+ Recommend</button>
-                    <br>
-                    <button class="btn-sm btn-rem" onclick="unmark('science', 'recent')">Remove Recent</button>
-                    <button class="btn-sm btn-rem" onclick="unmark('science', 'trending')">Remove Trending</button>
-                </td>
-            </tr>
-            <tr>
-                <td><b>Math Lesson Plan</b></td>
-                <td>
-                    <button class="btn-sm btn-add" onclick="markAuto('math', 'recent', 5)">+ Recent</button>
-                    <button class="btn-sm btn-add" onclick="markAuto('math', 'trending', 10)">+ Trending</button>
-                    <button class="btn-sm btn-purp" onclick="openFacModal('math')">+ Recommend</button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+<div class="container">
+    <h1>Library Admin Center</h1>
+
+    <div class="dashboard-grid">
+        <div class="stat-box" style="background: var(--blue);">
+            <small>Recent Updates</small>
+            <div id="recent-count" style="font-size: 24px; font-weight: 700;">0 / 5</div>
+        </div>
+        <div class="stat-box" style="background: #f59e0b;">
+            <small>Trending Books</small>
+            <div id="trending-count" style="font-size: 24px; font-weight: 700;">0 / 10</div>
+        </div>
+        <div class="stat-box" style="background: #a855f7;">
+            <small>Total Recommendations</small>
+            <div id="rec-count" style="font-size: 24px; font-weight: 700;">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📂 Content Manager</h3>
+        <table>
+            <thead><tr style="text-align:left; color:#94a3b8; font-size:11px;"><th>BOOK NAME</th><th>MANAGEMENT ACTIONS</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><b>Science Textbook</b></td>
+                    <td>
+                        <button class="btn btn-add" onclick="markAuto('science', 'recent', 5)">+ Add Recent</button>
+                        <button class="btn btn-add" onclick="markAuto('science', 'trending', 10)">+ Add Trending</button>
+                        <button class="btn btn" style="background:#f3e8ff; color:#6b21a8;" onclick="openFacModal('science')">Recommend</button>
+                        <br>
+                        <button class="btn btn-rem" onclick="unmark('science', 'recent')">Remove Recent</button>
+                        <button class="btn btn-rem" onclick="unmark('science', 'trending')">Remove Trending</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Math Lesson Plan</b></td>
+                    <td>
+                        <button class="btn btn-add" onclick="markAuto('math', 'recent', 5)">+ Add Recent</button>
+                        <button class="btn btn-add" onclick="markAuto('math', 'trending', 10)">+ Add Trending</button>
+                        <button class="btn btn" style="background:#f3e8ff; color:#6b21a8;" onclick="openFacModal('math')">Recommend</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>👥 Registered Members</h3>
+        <table id="memberTable">
+            <tbody></tbody>
+        </table>
+    </div>
 </div>
 
 <div id="overlay" class="hidden">
     <div class="modal">
-        <h3>Recommend Faculty</h3>
+        <h3>Faculty Recommendation</h3>
         <div id="facList"></div>
-        <button onclick="document.getElementById('overlay').classList.add('hidden')" style="width:100%; margin-top:10px;">Cancel</button>
+        <button onclick="document.getElementById('overlay').classList.add('hidden')" style="width:100%; margin-top:15px; padding:10px; border-radius:10px; border:none; cursor:pointer;">Close</button>
     </div>
 </div>
 
@@ -74,56 +101,66 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // AUTO-ROTATE LOGIC
+    // 1. Refresh Dashboard Stats
+    async function updateDashboardStats() {
+        const snap = await db.collection("library_settings").get();
+        let r = 0, t = 0;
+        snap.forEach(doc => {
+            if(doc.data().recent) r++;
+            if(doc.data().trending) t++;
+        });
+        document.getElementById('recent-count').innerText = `${r} / 5`;
+        document.getElementById('trending-count').innerText = `${t} / 10`;
+        
+        const recSnap = await db.collection("recommendations").get();
+        document.getElementById('rec-count').innerText = recSnap.size;
+    }
+    updateDashboardStats();
+
+    // 2. Fixed Add Logic (No Index Required)
     async function markAuto(bookId, category, limit) {
-        const snap = await db.collection("library_settings")
-                             .where(category, "==", true)
-                             .orderBy("updatedAt", "asc")
-                             .get();
+        try {
+            const snap = await db.collection("library_settings").where(category, "==", true).get();
+            
+            if (snap.size >= limit) {
+                let oldestId = null;
+                let oldestTime = Infinity;
+                snap.forEach(doc => {
+                    const time = doc.data().updatedAt ? new Date(doc.data().updatedAt).getTime() : 0;
+                    if (time < oldestTime) { oldestTime = time; oldestId = doc.id; }
+                });
+                if (oldestId) await db.collection("library_settings").doc(oldestId).update({ [category]: false });
+            }
 
-        // If limit reached, remove the oldest one
-        if (snap.size >= limit) {
-            const oldestId = snap.docs[0].id;
-            await db.collection("library_settings").doc(oldestId).update({ [category]: false });
-        }
+            await db.collection("library_settings").doc(bookId).set({
+                [category]: true, updatedAt: new Date().toISOString()
+            }, { merge: true });
 
-        // Add new one
-        await db.collection("library_settings").doc(bookId).set({
-            [category]: true,
-            updatedAt: new Date().toISOString()
-        }, { merge: true });
-
-        alert(`${bookId} added to ${category}. Oldest removed if over ${limit}.`);
+            alert(`Added to ${category}!`);
+            location.reload();
+        } catch (e) { alert("Error: " + e.message); }
     }
 
     async function unmark(bookId, category) {
         await db.collection("library_settings").doc(bookId).update({ [category]: false });
-        alert("Removed from " + category);
+        alert("Removed!"); location.reload();
     }
 
-    let currentBook = "";
+    let curBook = "";
     async function openFacModal(bookId) {
-        currentBook = bookId;
+        curBook = bookId;
         document.getElementById('overlay').classList.remove('hidden');
         const snap = await db.collection("users").where("position", "==", "faculty").get();
         const list = document.getElementById('facList');
         list.innerHTML = "";
         snap.forEach(doc => {
-            const f = doc.data();
-            list.innerHTML += `<div onclick="assignFac('${f.uid}', '${f.fullName}')" style="padding:10px; cursor:pointer; border-bottom:1px solid #eee;">${f.fullName}</div>`;
+            list.innerHTML += `<div onclick="assignFac('${doc.id}', '${doc.data().fullName}')" style="padding:10px; cursor:pointer; border-bottom:1px solid #eee;">${doc.data().fullName}</div>`;
         });
     }
 
     async function assignFac(uid, name) {
-        // Faculty Recommendations are UNLIMITED
-        await db.collection("recommendations").add({
-            facultyId: uid,
-            facultyName: name,
-            bookId: currentBook,
-            timestamp: new Date().toISOString()
-        });
-        alert("Recommended by " + name);
-        document.getElementById('overlay').classList.add('hidden');
+        await db.collection("recommendations").add({ facultyName: name, bookId: curBook, timestamp: new Date().toISOString() });
+        alert("Recommended!"); document.getElementById('overlay').classList.add('hidden');
     }
 </script>
 </body>
