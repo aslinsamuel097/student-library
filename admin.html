@@ -3,74 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Admin Control</title>
+    <title>Library Admin Control - Auto-Rotate</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --blue: #3b82f6; --purple: #a855f7; --bg: #f8fafc; --dark: #1e293b; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
-        .container { max-width: 1200px; margin: auto; }
-        .hidden { display: none !important; }
-        .card { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 25px; }
-        .card-header { font-weight: 600; color: var(--blue); border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        :root { --blue: #3b82f6; --purple: #a855f7; --bg: #f8fafc; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); padding: 20px; }
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px; }
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px; background: #f8fafc; font-size: 11px; text-transform: uppercase; color: #64748b; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        .btn-sm { padding: 5px 10px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; margin-right: 2px; }
-        .btn-blue { background: #dbeafe; color: #1e40af; }
-        .btn-purple { background: #f3e8ff; color: #6b21a8; }
-        .modal { background: white; width: 95%; max-width: 800px; border-radius: 25px; padding: 30px; position: relative; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .btn-sm { padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; margin: 2px; }
+        .btn-add { background: #dcfce7; color: #166534; }
+        .btn-rem { background: #fee2e2; color: #ef4444; }
+        .btn-purp { background: #f3e8ff; color: #6b21a8; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; }
+        .hidden { display: none !important; }
+        .modal { background: white; width: 90%; max-width: 500px; border-radius: 20px; padding: 25px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="card">
-        <div class="card-header">📂 Content Management (PDF Control)</div>
-        <table>
-            <thead><tr><th>PDF Name</th><th>Type</th><th>Actions</th></tr></thead>
-            <tbody id="pdfList">
-                <tr>
-                    <td>Science Textbook</td>
-                    <td>Read Online</td>
-                    <td>
-                        <button class="btn-sm btn-blue" onclick="markBook('science', 'recent')">Recent</button>
-                        <button class="btn-sm btn-blue" onclick="markBook('science', 'trending')">Trending</button>
-                        <button class="btn-sm btn-purple" onclick="openFacultyModal('science')">Recommend</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Math Lesson Plan</td>
-                    <td>Read Online</td>
-                    <td>
-                        <button class="btn-sm btn-blue" onclick="markBook('math', 'recent')">Recent</button>
-                        <button class="btn-sm btn-blue" onclick="markBook('math', 'trending')">Trending</button>
-                        <button class="btn-sm btn-purple" onclick="openFacultyModal('math')">Recommend</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="card">
-        <div class="card-header">👥 Registered Members & Live Status</div>
-        <table id="memberTable">
-            <thead><tr><th>Status</th><th>Name</th><th>Email</th><th>Action</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
+<div class="card">
+    <h2 style="color:var(--blue); margin-top:0;">📂 Content Manager</h2>
+    <p style="font-size:12px; color:#64748b;">Recent: Max 5 | Trending: Max 10 | Recommendations: Unlimited</p>
+    <table>
+        <thead><tr style="text-align:left; font-size:11px; color:#94a3b8;"><th>PDF NAME</th><th>CATEGORIES</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><b>Science Textbook</b></td>
+                <td>
+                    <button class="btn-sm btn-add" onclick="markAuto('science', 'recent', 5)">+ Recent</button>
+                    <button class="btn-sm btn-add" onclick="markAuto('science', 'trending', 10)">+ Trending</button>
+                    <button class="btn-sm btn-purp" onclick="openFacModal('science')">+ Recommend</button>
+                    <br>
+                    <button class="btn-sm btn-rem" onclick="unmark('science', 'recent')">Remove Recent</button>
+                    <button class="btn-sm btn-rem" onclick="unmark('science', 'trending')">Remove Trending</button>
+                </td>
+            </tr>
+            <tr>
+                <td><b>Math Lesson Plan</b></td>
+                <td>
+                    <button class="btn-sm btn-add" onclick="markAuto('math', 'recent', 5)">+ Recent</button>
+                    <button class="btn-sm btn-add" onclick="markAuto('math', 'trending', 10)">+ Trending</button>
+                    <button class="btn-sm btn-purp" onclick="openFacModal('math')">+ Recommend</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 
 <div id="overlay" class="hidden">
     <div class="modal">
-        <h3>Recommend to Faculty</h3>
-        <input type="text" id="facSearch" class="search-box" placeholder="Search Faculty Name..." onkeyup="filterFaculty()">
-        <div id="facList" style="max-height: 250px; overflow-y: auto;"></div>
-        <button onclick="closeModal()" style="margin-top:15px; background:#eee; border:none; padding:10px; border-radius:10px; width:100%; cursor:pointer;">Cancel</button>
+        <h3>Recommend Faculty</h3>
+        <div id="facList"></div>
+        <button onclick="document.getElementById('overlay').classList.add('hidden')" style="width:100%; margin-top:10px;">Cancel</button>
     </div>
 </div>
 
@@ -85,40 +73,39 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const auth = firebase.auth();
 
-    auth.onAuthStateChanged(user => {
-        if(user && user.email === "phlagongkk@gmail.com") { loadMembers(); }
-        else if (user) { window.location.href = "index.html"; }
-    });
+    // AUTO-ROTATE LOGIC
+    async function markAuto(bookId, category, limit) {
+        const snap = await db.collection("library_settings")
+                             .where(category, "==", true)
+                             .orderBy("updatedAt", "asc")
+                             .get();
 
-    async function loadMembers() {
-        const snap = await db.collection("users").get();
-        const tbody = document.querySelector("#memberTable tbody");
-        tbody.innerHTML = "";
-        snap.forEach(doc => {
-            const u = doc.data();
-            const lastActive = u.lastActive ? new Date(u.lastActive).getTime() : 0;
-            const isOnline = (Date.now() - lastActive) < 180000; //
-            tbody.innerHTML += `<tr>
-                <td><span style="color:${isOnline?'green':'gray'}">● ${isOnline?'Online':'Offline'}</span></td>
-                <td><b>${u.fullName}</b></td>
-                <td>${u.email}</td>
-                <td><button class="btn-sm btn-blue" onclick="alert('View folders coming soon')">View Log</button></td>
-            </tr>`;
-        });
+        // If limit reached, remove the oldest one
+        if (snap.size >= limit) {
+            const oldestId = snap.docs[0].id;
+            await db.collection("library_settings").doc(oldestId).update({ [category]: false });
+        }
+
+        // Add new one
+        await db.collection("library_settings").doc(bookId).set({
+            [category]: true,
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        alert(`${bookId} added to ${category}. Oldest removed if over ${limit}.`);
     }
 
-    async function markBook(bookId, category) {
-        await db.collection("library_settings").doc(bookId).set({ [category]: true }, { merge: true });
-        alert("Success: " + category);
+    async function unmark(bookId, category) {
+        await db.collection("library_settings").doc(bookId).update({ [category]: false });
+        alert("Removed from " + category);
     }
 
-    let bookToRec = "";
-    async function openFacultyModal(bookId) {
-        bookToRec = bookId;
+    let currentBook = "";
+    async function openFacModal(bookId) {
+        currentBook = bookId;
         document.getElementById('overlay').classList.remove('hidden');
-        const snap = await db.collection("users").where("position", "==", "faculty").get(); //
+        const snap = await db.collection("users").where("position", "==", "faculty").get();
         const list = document.getElementById('facList');
         list.innerHTML = "";
         snap.forEach(doc => {
@@ -128,12 +115,16 @@
     }
 
     async function assignFac(uid, name) {
-        await db.collection("recommendations").doc(bookToRec).set({ facultyId: uid, facultyName: name, bookId: bookToRec }, { merge: true });
-        alert("Assigned to " + name);
-        closeModal();
+        // Faculty Recommendations are UNLIMITED
+        await db.collection("recommendations").add({
+            facultyId: uid,
+            facultyName: name,
+            bookId: currentBook,
+            timestamp: new Date().toISOString()
+        });
+        alert("Recommended by " + name);
+        document.getElementById('overlay').classList.add('hidden');
     }
-
-    function closeModal() { document.getElementById('overlay').classList.add('hidden'); }
 </script>
 </body>
 </html>
