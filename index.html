@@ -1,157 +1,108 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jesus is the Saviour - Student Library</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <style>
-        :root { --blue: #3b82f6; --orange: #f97316; --green: #10b981; --purple: #a855f7; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
-        .hidden { display: none !important; }
-        
-        /* Auth Screen */
-        #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; }
-        .auth-card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; }
-        .btn-google { background: white; border: 1px solid #ddd; padding: 12px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
-        
-        /* Form */
-        .form-group { margin-top: 15px; text-align: left; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; margin-top: 5px; box-sizing: border-box; }
-        
-        /* Dashboard */
-        header { margin-bottom: 25px; }
-        .savior-badge { color: var(--blue); font-weight: bold; font-size: 18px; display: block; margin-bottom: 5px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
-        .stat-card { border-radius: 18px; padding: 20px; color: white; }
-        .bg-blue { background: var(--blue); } .bg-purple { background: var(--purple); }
-        
-        .book-item { background: white; display: flex; align-items: center; padding: 18px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .btn-action { background: #eff6ff; color: var(--blue); border: none; padding: 8px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 13px; }
-    </style>
-</head>
-<body>
-
-<div id="auth-screen">
-    <div class="auth-card">
-        <h2 id="auth-title">Student Library</h2>
-        <p id="auth-sub" style="color: #64748b; font-size: 14px;">Sign in with Google to continue</p>
-        
-        <button id="login-btn" class="btn-google" onclick="signInWithGoogle()">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Sign in with Google
-        </button>
-
-        <div id="registration-form" class="hidden">
-            <div class="form-group"><label>WhatsApp Number</label><input type="text" id="reg-whatsapp" placeholder="Optional"></div>
-            <div class="form-group"><label>Institution Name</label><input type="text" id="reg-inst" placeholder="College Name" required></div>
-            <div class="form-group">
-                <label>Position</label>
-                <select id="reg-position"><option value="student">Student</option><option value="faculty">Faculty</option></select>
-            </div>
-            <button class="btn-google" style="background: var(--blue); color: white; border: none; margin-top: 20px;" onclick="saveRegistration()">Complete Setup</button>
+<div class="book-list">
+    <h3 style="font-size: 16px; color: #64748b;">AVAILABLE RESOURCES</h3>
+    
+    <div class="book-item">
+        <div style="flex-grow: 1;">
+            <b>Science Textbook</b><br>
+            <small id="status-science">Preview Available (25 Pages)</small>
+        </div>
+        <div class="actions">
+            <button onclick="readLimited('public/science_book.pdf')" class="btn-action">Read Online</button>
+            <button onclick="borrowBook('Science Textbook', 'public/science_book.pdf')" class="btn-action" style="background: #f1f5f9; color: #1e293b; margin-left: 5px;">Borrow</button>
         </div>
     </div>
 </div>
 
-<div id="dashboard" class="hidden">
-    <header>
-        <span class="savior-badge">JESUS is the Saviour</span>
-        <h1 id="user-welcome" style="margin: 0; font-size: 22px;">Library Admin</h1>
-        <button onclick="logout()" style="border: none; background: none; color: #94a3b8; cursor: pointer;">Sign Out</button>
-    </header>
-
-    <div class="stats-grid">
-        <div class="stat-card bg-blue"><h3>Books</h3><span style="font-size: 28px; font-weight: bold;">20</span></div>
-        <div class="stat-card bg-purple"><h3>Members</h3><span id="memberCount" style="font-size: 28px; font-weight: bold;">120</span></div>
+<div id="borrowed-section" style="margin-top: 30px; background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+    <h3 style="font-size: 16px; color: var(--purple);">MY BORROWED BOOKS</h3>
+    <div id="borrowed-list">
+        <p style="color: #94a3b8; font-size: 14px;">No books borrowed yet.</p>
     </div>
-
-  <div class="book-list">
-    <h3 style="font-size: 16px; color: #64748b;">AVAILABLE BOOKS</h3>
-    
-    <div class="book-item">
-        <div style="flex-grow: 1;"><b>Science Textbook</b><br><small style="color: #94a3b8;">PDF Document</small></div>
-        <a href="public/science_book.pdf" target="_blank" class="btn-action">Read Online</a>
-    </div>
-
-    <div class="book-item">
-        <div style="flex-grow: 1;"><b>Math Lesson Plan</b><br><small style="color: #94a3b8;">PDF Document</small></div>
-        <a href="public/math_lesson.pdf" target="_blank" class="btn-action">Read Online</a>
-    </div>
-</div>
 </div>
 
 <script>
-    // Your actual configuration from your screenshot
-    const firebaseConfig = {
-      apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg",
-      authDomain: "student-library-4a4e7.firebaseapp.com",
-      projectId: "student-library-4a4e7",
-      storageBucket: "student-library-4a4e7.firebasestorage.app",
-      messagingSenderId: "827419448917",
-      appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // Login Function
-    function signInWithGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(err => alert("Error: " + err.message));
+    // 1. Limitation: Read Online (25 Pages)
+    function readLimited(fileUrl) {
+        alert("PREVIEW MODE: You can only view the first 25 pages. To see the full book, please use the 'Borrow' option.");
+        // We add #page=1 to start at page 1, but browsers cannot strictly block page 26+ 
+        // without a heavy PDF viewer. This warns the student.
+        window.open(fileUrl + "#page=1", "_blank");
     }
 
-    // Check Login Status
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            const userDoc = await db.collection("users").doc(user.uid).get();
-            if (userDoc.exists) { 
-                showDashboard(userDoc.data()); 
-            } else { 
-                showRegistration(); 
-            }
-        } else { 
-            showLogin(); 
-        }
-    });
-
-    function showRegistration() {
-        document.getElementById('login-btn').classList.add('hidden');
-        document.getElementById('registration-form').classList.remove('hidden');
-        document.getElementById('auth-title').innerText = "Finish Registration";
-    }
-
-    async function saveRegistration() {
+    // 2. Borrow Logic (5 Day Limit)
+    async function borrowBook(bookTitle, fileUrl) {
         const user = auth.currentUser;
-        const data = {
-            fullName: user.displayName,
-            email: user.email,
-            whatsapp: document.getElementById('reg-whatsapp').value,
-            institution: document.getElementById('reg-inst').value,
-            position: document.getElementById('reg-position').value,
-            uid: user.uid,
-            joinedAt: new Date().toISOString()
-        };
-        await db.collection("users").doc(user.uid).set(data);
-        showDashboard(data);
+        const borrowCode = prompt("Enter Borrowing Code for " + bookTitle + ":");
+        
+        // You can change these codes
+        const validCodes = ["BORROW2026", "STUDENT101"];
+
+        if (validCodes.includes(borrowCode)) {
+            const borrowDate = new Date();
+            const expiryDate = new Date();
+            expiryDate.setDate(borrowDate.getDate() + 5);
+
+            const borrowData = {
+                title: bookTitle,
+                url: fileUrl,
+                userId: user.uid,
+                borrowedOn: borrowDate.toISOString(),
+                expiresOn: expiryDate.toISOString()
+            };
+
+            await db.collection("borrows").add(borrowData);
+            alert(bookTitle + " added to your Borrowed tab for 5 days!");
+            location.reload(); // Refresh to show in Borrowed tab
+        } else {
+            alert("Invalid Code. Contact Admin.");
+        }
     }
 
-    function showDashboard(userData) {
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-        document.getElementById('user-welcome').innerText = "Hello, " + userData.fullName.split(' ')[0];
+    // 3. Load Borrowed Books & Calculate Fees
+    async function loadBorrowedBooks() {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const snapshot = await db.collection("borrows").where("userId", "==", user.uid).get();
+        const container = document.getElementById('borrowed-list');
+        
+        if (snapshot.empty) return;
+        container.innerHTML = "";
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const now = new Date();
+            const expiry = new Date(data.expiresOn);
+            
+            // Calculate Late Fees
+            let feeMessage = "Status: Active";
+            let diffDays = Math.ceil((now - expiry) / (1000 * 60 * 60 * 24));
+
+            if (diffDays > 0) {
+                if (diffDays === 1) feeMessage = "Late: 1 Day (Free Extension)";
+                else if (diffDays <= 4) feeMessage = "Late Fee: ₹20";
+                else if (diffDays <= 7) feeMessage = "Late Fee: ₹50";
+                else {
+                    feeMessage = "Expired - Please re-borrow";
+                    // Logic to auto-remove from UI if too late
+                    return; 
+                }
+            }
+
+            container.innerHTML += `
+                <div class="book-item" style="border-left: 4px solid var(--purple);">
+                    <div style="flex-grow: 1;">
+                        <b>${data.title} (FULL ACCESS)</b><br>
+                        <small style="color: #ef4444;">${feeMessage}</small>
+                    </div>
+                    <a href="${data.url}" download class="btn-action" style="background: var(--purple); color: white;">Download PDF</a>
+                </div>
+            `;
+        });
     }
 
-    function showLogin() {
-        document.getElementById('auth-screen').classList.remove('hidden');
-        document.getElementById('dashboard').classList.add('hidden');
-        document.getElementById('login-btn').classList.remove('hidden');
-    }
-
-    function logout() { auth.signOut(); }
+    // Call this inside your auth listener
+    auth.onAuthStateChanged((user) => {
+        if (user) { loadBorrowedBooks(); }
+    });
 </script>
-
-</body>
-</html>
