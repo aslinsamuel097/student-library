@@ -22,6 +22,7 @@
         .stat-card { padding: 25px; border-radius: 20px; color: white; transition: 0.3s; }
         .btn-action { padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; font-size: 13px; }
         .btn-primary { background: var(--blue); color: white; }
+        .btn-read-full { background: var(--purple); color: white; }
         #reader-overlay { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; }
     </style>
 </head>
@@ -30,15 +31,18 @@
 <div id="auth-screen">
     <div class="auth-card glass-card animate__animated animate__fadeInUp">
         <h2>Student Library</h2>
-        <p style="color: #64748b; margin-bottom: 25px;">Knowledge is Power</p>
-        <button id="login-btn" class="btn-action btn-primary" style="width:100%; padding:15px;" onclick="signInWithGoogle()">Sign in with Google</button>
+        <p style="color: #64748b; margin-bottom: 25px;">Enter the World of Knowledge</p>
+        
+        <button id="login-btn" class="btn-action btn-primary" style="width:100%; padding:15px;" onclick="signInWithGoogle()">
+            Sign in with Google
+        </button>
 
         <div id="registration-form" class="hidden">
-            <h3 style="margin-top:0;">Finalize Setup</h3>
-            <p style="font-size: 11px; color: #ef4444;">* Institution and Position are mandatory</p>
-            <input type="text" id="reg-inst" placeholder="Institution Name (Required)" required>
+            <h3 style="margin-top:0;">Profile Setup</h3>
+            <p style="font-size: 11px; color: #ef4444; text-transform: uppercase;">* Mandatory Fields</p>
+            <input type="text" id="reg-inst" placeholder="Institution Name" required>
             <select id="reg-position" required>
-                <option value="" disabled selected>Select Position (Required)</option>
+                <option value="" disabled selected>Select Position</option>
                 <option value="student">Student</option>
                 <option value="faculty">Faculty</option>
             </select>
@@ -50,8 +54,11 @@
 
 <div id="dashboard" class="hidden animate__animated animate__fadeIn">
     <header>
-        <div><span style="color: var(--blue); font-weight: 800; font-size: 12px;">JESUS IS THE SAVIOUR</span><h1 id="user-welcome">Dashboard</h1></div>
-        <button onclick="logout()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600;">LOGOUT</button>
+        <div>
+            <span style="color: var(--blue); font-weight: 800; font-size: 12px; letter-spacing: 1px;">JESUS IS THE SAVIOUR</span>
+            <h1 id="user-welcome" style="margin: 0;">Dashboard</h1>
+        </div>
+        <button onclick="logout()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight: 600;">LOGOUT</button>
     </header>
 
     <div class="stats-grid">
@@ -60,17 +67,27 @@
     </div>
 
     <div class="glass-card" style="padding: 25px;">
-        <h3 style="margin:0 0 15px 0; color:#64748b; font-size: 14px;">AVAILABLE RESOURCES</h3>
+        <h3 style="margin-top:0; color:#64748b; font-size: 14px; letter-spacing: 1px;">AVAILABLE RESOURCES</h3>
         <div id="available-list">
             <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #f1f5f9;">
                 <div><b>Science Textbook</b><br><small style="color:#94a3b8;">Preview available</small></div>
                 <button onclick="openReader('public/science_book_read_online.pdf', 'Science Preview')" class="btn-action btn-primary">Read</button>
             </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0;">
+                <div><b>Math Lesson Plan</b><br><small style="color:#94a3b8;">Preview available</small></div>
+                <button onclick="openReader('public/math_lesson_read_online.pdf', 'Math Preview')" class="btn-action btn-primary">Read</button>
+            </div>
         </div>
     </div>
 </div>
 
-<div id="reader-overlay" class="hidden"><div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between;"><span id="rtitle">Reading</span><button onclick="closeReader()" style="background:#ef4444; color:white; border:none; border-radius:8px; padding:5px 15px; cursor:pointer;">Exit</button></div><iframe id="pdf-frame" src="" style="flex-grow:1; border:none;"></iframe></div>
+<div id="reader-overlay" class="hidden">
+    <div style="padding:15px; background:#1e293b; color:white; display:flex; justify-content:space-between; align-items:center;">
+        <span id="rtitle">Reading Mode</span>
+        <button onclick="closeReader()" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">Exit</button>
+    </div>
+    <iframe id="pdf-frame" src="" style="flex-grow:1; border:none;"></iframe>
+</div>
 
 <script>
     const firebaseConfig = {
@@ -81,38 +98,102 @@
       messagingSenderId: "827419448917",
       appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc"
     };
+
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth(); const db = firebase.firestore();
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
     let sessionStart, readingStart, currBook;
+
+    // Use redirect to bypass most popup blockers
+    function signInWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithRedirect(provider);
+    }
+
+    // Capture the result of the redirect
+    auth.getRedirectResult().catch(err => alert("Sign-in failed: " + err.message));
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             sessionStart = Date.now();
-            const updateStat = () => { db.collection("users").doc(user.uid).update({ lastActive: new Date().toISOString() }).catch(()=>{}); };
-            updateStat(); setInterval(updateStat, 60000); // 60s Live Pulse
+            
+            // Live Status Update
+            const updateStat = () => { 
+                db.collection("users").doc(user.uid).update({ lastActive: new Date().toISOString() }).catch(()=>{}); 
+            };
+            updateStat(); 
+            setInterval(updateStat, 60000);
 
             const doc = await db.collection("users").doc(user.uid).get();
-            if (doc.exists) { showDashboard(doc.data()); } else { showRegistration(); }
+            if (doc.exists) { showDashboard(doc.data()); } 
+            else { showRegistration(); }
         } else { showLogin(); }
     });
 
-    function showRegistration() { document.getElementById('login-btn').classList.add('hidden'); document.getElementById('registration-form').classList.remove('hidden'); }
-    
+    function showRegistration() {
+        document.getElementById('login-btn').classList.add('hidden');
+        document.getElementById('registration-form').classList.remove('hidden');
+    }
+
     async function saveRegistration() {
         const inst = document.getElementById('reg-inst').value.trim();
         const pos = document.getElementById('reg-position').value;
-        if(!inst || !pos) { alert("Mandatory: Please select your Institution and Position."); return; }
+        if(!inst || !pos) { alert("Institution and Position are mandatory."); return; }
+        
         const user = auth.currentUser;
-        const data = { fullName: user.displayName, email: user.email, whatsapp: document.getElementById('reg-whatsapp').value, institution: inst, position: pos, uid: user.uid, lastActive: new Date().toISOString() };
-        await db.collection("users").doc(user.uid).set(data); showDashboard(data);
+        const data = { 
+            fullName: user.displayName, 
+            email: user.email, 
+            whatsapp: document.getElementById('reg-whatsapp').value, 
+            institution: inst, 
+            position: pos, 
+            uid: user.uid, 
+            lastActive: new Date().toISOString() 
+        };
+        await db.collection("users").doc(user.uid).set(data);
+        showDashboard(data);
     }
 
-    function showDashboard(u) { document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('user-welcome').innerText = "Hello, " + u.fullName.split(' ')[0]; }
-    function showLogin() { document.getElementById('auth-screen').classList.remove('hidden'); document.getElementById('dashboard').classList.add('hidden'); }
-    async function logout() { const dur = Math.floor((Date.now() - sessionStart) / 1000); await saveAct("Total App Usage", `${Math.floor(dur/60)}m ${dur%60}s`); auth.signOut(); }
-    function openReader(url, t) { currBook = t; readingStart = Date.now(); document.getElementById('rtitle').innerText = t; document.getElementById('pdf-frame').src = url + "#toolbar=0"; document.getElementById('reader-overlay').classList.remove('hidden'); }
-    async function closeReader() { const dur = Math.floor((Date.now() - readingStart) / 1000); if(dur > 2) await saveAct("Reading: " + currBook, `${Math.floor(dur/60)}m ${dur%60}s`); document.getElementById('reader-overlay').classList.add('hidden'); document.getElementById('pdf-frame').src = ""; }
-    async function saveAct(type, dur) { await db.collection("activity_logs").add({ userName: auth.currentUser.displayName, activityType: type, duration: dur, timestamp: new Date().toISOString() }); }
+    function showDashboard(u) {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        document.getElementById('user-welcome').innerText = "Hello, " + u.fullName.split(' ')[0];
+    }
+
+    function showLogin() {
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('dashboard').classList.add('hidden');
+    }
+
+    async function logout() {
+        const dur = Math.floor((Date.now() - sessionStart) / 1000);
+        await saveAct("Total App Usage", `${Math.floor(dur/60)}m ${dur%60}s`);
+        auth.signOut();
+    }
+
+    function openReader(url, t) {
+        currBook = t; readingStart = Date.now();
+        document.getElementById('rtitle').innerText = t;
+        document.getElementById('pdf-frame').src = url + "#toolbar=0";
+        document.getElementById('reader-overlay').classList.remove('hidden');
+    }
+
+    async function closeReader() {
+        const dur = Math.floor((Date.now() - readingStart) / 1000);
+        if(dur > 2) await saveAct("Reading: " + currBook, `${Math.floor(dur/60)}m ${dur%60}s`);
+        document.getElementById('reader-overlay').classList.add('hidden');
+        document.getElementById('pdf-frame').src = "";
+    }
+
+    async function saveAct(type, dur) {
+        await db.collection("activity_logs").add({
+            userName: auth.currentUser.displayName,
+            activityType: type,
+            duration: dur,
+            timestamp: new Date().toISOString()
+        });
+    }
 </script>
 </body>
 </html>
