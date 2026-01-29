@@ -21,13 +21,24 @@
 <body>
 
 <div id="dashboard">
-    <header style="display:flex; justify-content:space-between; align-items:center;">
-        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1>Library</h1></div>
+    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1 style="margin:0;">Library</h1></div>
     </header>
 
-    <div class="glass-card"><h3>🕒 Recent Uploads (Top 5)</h3><div id="recent-list"></div></div>
-    <div class="glass-card"><h3>🔥 Trending Now (Top 10)</h3><div id="trending-list"></div></div>
-    <div class="glass-card"><h3>🎓 Faculty Recommendations</h3><div id="recommendation-list"></div></div>
+    <div class="glass-card">
+        <h3>🕒 Recent Uploads (Top 5)</h3>
+        <div id="recent-list"></div>
+    </div>
+
+    <div class="glass-card">
+        <h3>🔥 Trending Now (Top 10)</h3>
+        <div id="trending-list"></div>
+    </div>
+
+    <div class="glass-card">
+        <h3>🎓 Faculty Recommendations</h3>
+        <div id="recommendation-list"></div>
+    </div>
 </div>
 
 <div id="reader-overlay" class="hidden">
@@ -51,27 +62,32 @@
     const db = firebase.firestore();
 
     async function loadLibrary() {
-        // Load Recent & Trending
-        const settings = await db.collection("library_settings").orderBy("updatedAt", "desc").get();
-        const rList = document.getElementById('recent-list');
-        const tList = document.getElementById('trending-list');
-        
-        rList.innerHTML = ""; tList.innerHTML = "";
+        // Load Categorized Items
+        db.collection("library_settings").onSnapshot(snap => {
+            const rList = document.getElementById('recent-list');
+            const tList = document.getElementById('trending-list');
+            rList.innerHTML = ""; tList.innerHTML = "";
 
-        settings.forEach(doc => {
-            const s = doc.data();
-            const html = `<div class="book-row"><span>${doc.id.toUpperCase()}</span><button class="btn-read" onclick="openPdf('${doc.id}')">Read</button></div>`;
-            if(s.recent) rList.innerHTML += html;
-            if(s.trending) tList.innerHTML += html;
+            // Convert to array and sort by time
+            const books = [];
+            snap.forEach(doc => books.push({id: doc.id, ...doc.data()}));
+            books.sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+            books.forEach(b => {
+                const html = `<div class="book-row"><span>${b.id.toUpperCase()} Textbook</span><button class="btn-read" onclick="openPdf('${b.id}')">Read</button></div>`;
+                if(b.recent) rList.innerHTML += html;
+                if(b.trending) tList.innerHTML += html;
+            });
         });
 
-        // Load Unlimited Recommendations
-        const recSnap = await db.collection("recommendations").orderBy("timestamp", "desc").get();
-        const recList = document.getElementById('recommendation-list');
-        recList.innerHTML = "";
-        recSnap.forEach(doc => {
-            const r = doc.data();
-            recList.innerHTML += `<div class="book-row"><span><b>${r.facultyName}</b> recommends ${r.bookId.toUpperCase()}</span><button class="btn-read" onclick="openPdf('${r.bookId}')">Open</button></div>`;
+        // Load Faculty Recommendations
+        db.collection("recommendations").orderBy("timestamp", "desc").onSnapshot(snap => {
+            const recList = document.getElementById('recommendation-list');
+            recList.innerHTML = "";
+            snap.forEach(doc => {
+                const r = doc.data();
+                recList.innerHTML += `<div class="book-row"><span><b>${r.facultyName}</b> recommends ${r.bookId.toUpperCase()}</span><button class="btn-read" onclick="openPdf('${r.bookId}')">Open</button></div>`;
+            });
         });
     }
 
