@@ -11,69 +11,86 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --blue: #3b82f6; --purple: #a855f7; --bg: #f0f4f8; --card: rgba(255, 255, 255, 0.95); }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; overflow-x: hidden; }
         .hidden { display: none !important; }
         .glass-card { background: var(--card); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 20px; }
+        
+        /* Navigation */
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: #e2e8f0; color: #64748b; }
         .tab-btn.active { background: var(--blue); color: white; }
+
         .search-box { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #e2e8f0; margin-bottom: 20px; font-size: 16px; outline: none; box-sizing: border-box; }
-        .btn-action { padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; font-size: 13px; }
+        .btn-action { padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; font-size: 13px; transition: 0.2s; }
         .btn-primary { background: var(--blue); color: white; }
         .btn-read-full { background: var(--purple); color: white; }
         .btn-return { background: #fee2e2; color: #ef4444; margin-left: 5px; }
+        
         .profile-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
         #reader-overlay { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-<div id="loading-screen" style="text-align:center; margin-top:100px;"><h3>Connecting to Saviour Library...</h3></div>
+<div id="loading-screen" style="text-align:center; margin-top:100px;">
+    <h3>Connecting to Library...</h3>
+</div>
 
 <div id="auth-screen" class="hidden">
-    <div class="glass-card animate__animated animate__fadeInUp" style="max-width:400px; margin:auto; text-align:center;">
+    <div class="glass-card animate__animated animate__fadeInUp" style="max-width: 400px; margin: auto; text-align: center;">
         <h2>Student Library</h2>
-        <button id="login-btn" class="btn-action btn-primary" style="width:100%;" onclick="signInWithGoogle()">Sign in with Google</button>
+        <button id="login-btn" class="btn-action btn-primary" style="width:100%; padding:15px;" onclick="signInWithGoogle()">Sign in with Google</button>
+        
         <div id="registration-form" class="hidden">
-            <input type="text" id="reg-inst" placeholder="Institution Name" required>
-            <select id="reg-position"><option value="student">Student</option><option value="faculty">Faculty</option></select>
-            <button class="btn-action btn-primary" onclick="saveRegistration()">Enter</button>
+            <h3>Profile Setup</h3>
+            <p style="font-size: 11px; color: #ef4444;">* Mandatory Fields</p>
+            <input type="text" id="reg-inst" placeholder="Institution Name (Required)" style="width:100%; padding:12px; margin-bottom:10px;">
+            <select id="reg-position" style="width:100%; padding:12px; margin-bottom:10px;">
+                <option value="" disabled selected>Select Position</option>
+                <option value="student">Student</option>
+                <option value="faculty">Faculty</option>
+            </select>
+            <input type="text" id="reg-whatsapp" placeholder="WhatsApp Number (Optional)" style="width:100%; padding:12px; margin-bottom:10px;">
+            <button class="btn-action btn-primary" onclick="saveRegistration()">Enter Library</button>
         </div>
     </div>
 </div>
 
-<div id="dashboard" class="hidden">
-    <header style="display:flex; justify-content:space-between;">
-        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1 id="user-welcome">Dashboard</h1></div>
-        <button onclick="logout()" style="background:none; border:none; color:#94a3b8; cursor:pointer;">LOGOUT</button>
+<div id="dashboard" class="hidden animate__animated animate__fadeIn">
+    <header style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <span style="color: var(--blue); font-weight: 800; font-size: 12px; letter-spacing: 1px;">JESUS IS THE SAVIOUR</span>
+            <h1 id="user-welcome" style="margin: 0; font-size: 24px;">Dashboard</h1>
+        </div>
+        <button onclick="logout()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight: 600;">LOGOUT</button>
     </header>
-    <span id="date-time" style="font-size:12px; color:#94a3b8;"></span>
+    <span id="date-time" style="font-size:12px; color:#94a3b8; margin-bottom:15px; display:block;"></span>
 
     <div class="nav-tabs">
         <button id="tab-library" class="tab-btn active" onclick="switchTab('library')">Library</button>
-        <button id="tab-profile" class="tab-btn" onclick="switchTab('profile')">Profile</button>
+        <button id="tab-profile" class="tab-btn" onclick="switchTab('profile')">My Profile</button>
     </div>
 
     <div id="library-view">
-        <input type="text" id="searchBar" class="search-box" placeholder="Search books..." onkeyup="searchBooks()">
+        <input type="text" id="searchBar" class="search-box" placeholder="🔍 Search for books..." onkeyup="searchBooks()">
         <div class="glass-card">
-            <h3 style="font-size:14px; color:#64748b;">AVAILABLE RESOURCES</h3>
+            <h3 style="margin-top:0; font-size: 14px; color: #64748b;">AVAILABLE RESOURCES</h3>
             <div id="available-list">
                 <div class="book-item" data-title="Science Textbook">
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee;">
-                        <span>Science Textbook</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #f1f5f9;">
+                        <div><b>Science Textbook</b><br><small style="color:#94a3b8;">Full Version</small></div>
                         <div>
                             <button onclick="openReader('public/science_book_read_online.pdf', 'Science Preview')" class="btn-action btn-primary">Read</button>
-                            <button onclick="borrowBook('Science Textbook', 'public/science_book.pdf')" class="btn-action">Borrow</button>
+                            <button onclick="borrowBook('Science Textbook', 'public/science_book.pdf')" class="btn-action btn-borrow">Borrow</button>
                         </div>
                     </div>
                 </div>
                 <div class="book-item" data-title="Math Lesson Plan">
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee;">
-                        <span>Math Lesson Plan</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0;">
+                        <div><b>Math Lesson Plan</b><br><small style="color:#94a3b8;">Teaching Guides</small></div>
                         <div>
                             <button onclick="openReader('public/math_lesson_read_online.pdf', 'Math Preview')" class="btn-action btn-primary">Read</button>
-                            <button onclick="borrowBook('Math Lesson Plan', 'public/math_lesson.pdf')" class="btn-action">Borrow</button>
+                            <button onclick="borrowBook('Math Lesson Plan', 'public/math_lesson.pdf')" class="btn-action btn-borrow">Borrow</button>
                         </div>
                     </div>
                 </div>
@@ -81,14 +98,14 @@
         </div>
         
         <div class="glass-card">
-            <h3 style="font-size:14px; color:var(--purple);">ACTIVE BORROWS</h3>
+            <h3 style="margin-top:0; color:var(--purple); font-size: 14px;">ACTIVE BORROWS</h3>
             <div id="dashboard-borrowed-list">Loading...</div>
         </div>
     </div>
 
     <div id="profile-view" class="hidden">
         <div class="glass-card">
-            <h3>My Stats</h3>
+            <h3>My Activity</h3>
             <div class="profile-row"><b>Institution</b> <span id="p-inst"></span></div>
             <div class="profile-row"><b>Total App Use</b> <span id="p-apptime"></span></div>
             <div class="profile-row"><b>Reading Time</b> <span id="p-readtime"></span></div>
@@ -155,6 +172,24 @@
         } else { showLogin(); }
     });
 
+    // FAIL-PROOF REGISTRATION
+    async function saveRegistration() {
+        const inst = document.getElementById('reg-inst').value.trim();
+        const pos = document.getElementById('reg-position').value;
+        const wa = document.getElementById('reg-whatsapp').value.trim() || "N/A";
+        
+        if(!inst || !pos) { alert("Please enter Institution and Position!"); return; }
+
+        const u = auth.currentUser;
+        try {
+            await db.collection("users").doc(u.uid).set({
+                fullName: u.displayName, email: u.email, institution: inst, position: pos, whatsapp: wa, uid: u.uid, lastActive: new Date().toISOString()
+            });
+            alert("Profile Created Successfully!");
+            window.location.reload(); 
+        } catch (error) { alert("Error: " + error.message); }
+    }
+
     async function loadBorrowedBooks() {
         const snap = await db.collection("borrows").where("userId", "==", auth.currentUser.uid).get();
         const list = document.getElementById('dashboard-borrowed-list');
@@ -173,8 +208,8 @@
 
     async function loadProfileData() {
         const u = auth.currentUser;
-        const userDoc = await db.collection("users").doc(u.uid).get();
-        document.getElementById('p-inst').innerText = userDoc.data().institution;
+        const doc = await db.collection("users").doc(u.uid).get();
+        document.getElementById('p-inst').innerText = doc.data().institution;
 
         const logs = await db.collection("activity_logs").where("userName", "==", u.displayName).get();
         let appSecs = 0, readSecs = 0;
@@ -191,18 +226,18 @@
         document.getElementById('p-readtime').innerText = Math.floor(readSecs/60) + "m " + (readSecs%60) + "s";
 
         const borrowSnap = await db.collection("borrows").where("userId", "==", u.uid).get();
-        const pBorrowList = document.getElementById('profile-borrow-details');
-        pBorrowList.innerHTML = "";
-        borrowSnap.forEach(doc => {
-            const d = doc.data();
-            const daysLeft = Math.ceil((new Date(d.expiresOn) - new Date()) / (1000*60*60*24));
-            pBorrowList.innerHTML += `<div class="profile-row"><b>${d.title}</b> <span>Due in: ${daysLeft > 0 ? daysLeft : 0} days</span></div>`;
+        const pList = document.getElementById('profile-borrow-details');
+        pList.innerHTML = "";
+        borrowSnap.forEach(d_doc => {
+            const d = d_doc.data();
+            const days = Math.ceil((new Date(d.expiresOn) - new Date()) / (1000*60*60*24));
+            pList.innerHTML += `<div class="profile-row"><b>${d.title}</b> <span>Due: ${days > 0 ? days : 0} days</span></div>`;
         });
     }
 
     async function borrowBook(title, url) {
         const existing = await db.collection("borrows").where("userId", "==", auth.currentUser.uid).where("title", "==", title).get();
-        if(!existing.empty) return alert("Lock: You already have an active borrow for this book.");
+        if(!existing.empty) return alert("You already have this book!");
         if(prompt("Code (BORROW2026):") === "BORROW2026") {
             const exp = new Date(); exp.setDate(exp.getDate() + 5);
             await db.collection("borrows").add({ title, url, userId: auth.currentUser.uid, expiresOn: exp.toISOString() });
@@ -211,7 +246,7 @@
     }
 
     async function returnBook(docId) {
-        if(confirm("Are you sure you want to return this book?")) {
+        if(confirm("Return this book?")) {
             await db.collection("borrows").doc(docId).delete();
             location.reload();
         }
