@@ -20,6 +20,8 @@
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
         .btn-sm { padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; margin: 2px; }
         input, select { padding: 10px; border-radius: 10px; border: 1px solid #ddd; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
+        /* ADMIN SEARCH BAR */
+        .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #e2e8f0; margin-bottom: 15px; outline: none; }
         .hidden { display: none !important; }
         .badge { padding: 4px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; }
         .online { background: #dcfce7; color: #166534; }
@@ -48,6 +50,9 @@
             </select>
             <button class="btn-sm" style="background: var(--blue); color: white; width: 100%; padding: 12px;" onclick="registerPDF()">Save to Inventory</button>
         </div>
+        
+        <input type="text" id="invSearch" class="search-box" placeholder="🔍 Search inventory..." onkeyup="filterInv()">
+
         <table>
             <thead><tr><th>PDF File</th><th>Category</th><th>Promotions</th><th>Action</th></tr></thead>
             <tbody id="inventory-list"></tbody>
@@ -104,9 +109,9 @@
         list.innerHTML = "";
         snap.forEach(doc => {
             const b = doc.data();
-            list.innerHTML += `<tr>
-                <td><b>${b.title || doc.id}</b><br><small>${doc.id}.pdf</small></td>
-                <td><span style="color:var(--blue)">${b.category || 'Uncategorized'}</span></td>
+            list.innerHTML += `<tr class="inv-item" data-name="${(b.title || '').toLowerCase()}">
+                <td><b>${b.title || doc.id}</b></td>
+                <td>${b.category}</td>
                 <td>
                     <button class="btn-sm" style="background:#dcfce7" onclick="updatePromo('${doc.id}', 'recent', 5)">+ Recent</button>
                     <button class="btn-sm" style="background:#fef9c3" onclick="updatePromo('${doc.id}', 'trending', 10)">+ Trend</button>
@@ -115,6 +120,13 @@
             </tr>`;
         });
     });
+
+    function filterInv() {
+        const q = document.getElementById('invSearch').value.toLowerCase();
+        document.querySelectorAll('.inv-item').forEach(el => {
+            el.style.display = el.dataset.name.includes(q) ? "table-row" : "none";
+        });
+    }
 
     db.collection("users").onSnapshot(snap => {
         const tbody = document.getElementById('member-body');
