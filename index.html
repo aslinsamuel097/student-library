@@ -31,8 +31,6 @@
         .btn-blue { background: var(--blue); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 11px; }
         .hidden { display: none !important; }
         #reader-overlay { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; }
-        
-        /* LOGIN STYLES */
         .login-field { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 12px; font-family: 'Poppins'; outline: none; }
     </style>
 </head>
@@ -126,7 +124,8 @@
 
         if(!snap.empty) {
             const userData = snap.docs[0].data();
-            currentUser = { uid: snap.docs[0].id, displayName: userData.fullName };
+            // STORE College ID for filtering books later
+            currentUser = { uid: snap.docs[0].id, displayName: userData.fullName, collegeId: userData.collegeId };
             sessionStart = Date.now();
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
@@ -163,8 +162,11 @@
             <button class="btn-blue" style="background:#eee;color:#333;" onclick="borrowB('${id}', '${t}')">Borrow</button></div></div>`;
     }
 
+    // UPDATED FILTER: Only show books where current user's college is in the allowed list
     function loadLib() {
-        db.collection("library_settings").onSnapshot(snap => {
+        db.collection("library_settings")
+          .where("allowedColleges", "array-contains", currentUser.collegeId)
+          .onSnapshot(snap => {
             const rL = document.getElementById('recent-list'), tL = document.getElementById('trending-list');
             rL.innerHTML = ""; tL.innerHTML = ""; allBooks = [];
             snap.forEach(doc => {
@@ -190,11 +192,15 @@
         }
     }
 
+    // UPDATED FILTER: Only show category books allowed for this college
     async function loadCat(n) {
         if(!n) return;
         document.getElementById('cat-name').innerText = n;
         document.getElementById('cat-view').classList.remove('hidden');
-        const snap = await db.collection("library_settings").where("category", "==", n).get();
+        const snap = await db.collection("library_settings")
+                            .where("category", "==", n)
+                            .where("allowedColleges", "array-contains", currentUser.collegeId)
+                            .get();
         const l = document.getElementById('cat-list'); l.innerHTML = "";
         snap.forEach(doc => l.innerHTML += renderB(doc.id, doc.data().title));
     }
