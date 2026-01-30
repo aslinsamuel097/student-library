@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Admin - Master Control</title>
+    <title>Library Admin - Advanced Control</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -11,20 +11,23 @@
     <style>
         :root { --blue: #3b82f6; --bg: #f8fafc; --card: #ffffff; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
-        .card { background: var(--card); border-radius: 20px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card { background: var(--card); border-radius: 20px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px; position: relative; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: #e2e8f0; }
         .tab-btn.active { background: var(--blue); color: white; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; padding: 10px; border-bottom: 2px solid #f1f5f9; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        .btn-sm { padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; margin: 2px; }
-        input, select { padding: 10px; border-radius: 10px; border: 1px solid #ddd; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
-        /* ADMIN SEARCH BAR */
+        .btn-sm { padding: 6px 10px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; margin: 2px; display: inline-flex; align-items: center; gap: 5px; }
         .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #e2e8f0; margin-bottom: 15px; outline: none; }
+        
+        /* Dropdown Menus */
+        .dropdown-menu { display: none; position: absolute; background: white; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 100; min-width: 180px; padding: 10px; }
+        .dropdown-item { padding: 8px; cursor: pointer; border-radius: 5px; font-size: 12px; }
+        .dropdown-item:hover { background: #f0f7ff; color: var(--blue); }
+        .show { display: block; }
+        .faculty-search { width: 100%; padding: 5px; margin-bottom: 8px; font-size: 12px; border: 1px solid #eee; border-radius: 5px; }
         .hidden { display: none !important; }
-        .badge { padding: 4px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; }
-        .online { background: #dcfce7; color: #166534; }
     </style>
 </head>
 <body>
@@ -36,44 +39,20 @@
 
     <div id="inv-section" class="card">
         <h2>📂 Global PDF Inventory</h2>
-        <div style="background: #f1f5f9; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-            <h4>Register New Uploaded PDF</h4>
-            <input type="text" id="reg-id" placeholder="File Name (e.g., science)">
-            <input type="text" id="reg-title" placeholder="Display Title">
-            <select id="reg-cat">
-                <option value="Systematic Theology">Systematic Theology</option>
-                <option value="CHURCH History">CHURCH History</option>
-                <option value="Mission">Mission</option>
-                <option value="Acts of Apostles">Acts of Apostles</option>
-                <option value="Synoptic Gospel">Synoptic Gospel</option>
-                <option value="Introduction to BIBLE">Introduction to BIBLE</option>
-            </select>
-            <button class="btn-sm" style="background: var(--blue); color: white; width: 100%; padding: 12px;" onclick="registerPDF()">Save to Inventory</button>
-        </div>
-        
         <input type="text" id="invSearch" class="search-box" placeholder="🔍 Search inventory..." onkeyup="filterInv()">
 
         <table>
-            <thead><tr><th>PDF File</th><th>Category</th><th>Promotions</th><th>Action</th></tr></thead>
+            <thead><tr><th>PDF File</th><th>Category</th><th>Assign / Recommend</th><th>Action</th></tr></thead>
             <tbody id="inventory-list"></tbody>
         </table>
     </div>
 
-    <div id="mem-section" class="hidden">
-        <div class="card">
-            <h3>👥 Member Live Status</h3>
-            <table id="memberTable">
-                <thead><tr><th>Status</th><th>Name</th><th>Email</th><th>Institution</th></tr></thead>
-                <tbody id="member-body"></tbody>
-            </table>
-        </div>
-        <div class="card">
-            <h3>⏳ Student Activity Logs</h3>
-            <table id="logTable">
-                <thead><tr><th>Student</th><th>Activity</th><th>Time</th></tr></thead>
-                <tbody id="log-body"></tbody>
-            </table>
-        </div>
+    <div id="mem-section" class="hidden card">
+        <h3>👥 Member Live Status</h3>
+        <table id="memberTable">
+            <thead><tr><th>Status</th><th>Name</th><th>Position</th><th>Email</th></tr></thead>
+            <tbody id="member-body"></tbody>
+        </table>
     </div>
 
 <script>
@@ -88,6 +67,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    let facultyList = [];
+    const categories = ["Systematic Theology", "CHURCH History", "Mission", "Acts of Apostles", "Synoptic Gospel", "Introduction to BIBLE"];
+
     function switchTab(t) {
         document.getElementById('inv-section').classList.toggle('hidden', t !== 'inv');
         document.getElementById('mem-section').classList.toggle('hidden', t !== 'mem');
@@ -95,31 +77,71 @@
         document.getElementById('t-mem').classList.toggle('active', t === 'mem');
     }
 
-    async function registerPDF() {
-        const id = document.getElementById('reg-id').value.trim();
-        const title = document.getElementById('reg-title').value.trim();
-        const cat = document.getElementById('reg-cat').value;
-        if(!id || !title) return alert("Fill all fields");
-        await db.collection("library_settings").doc(id).set({ title, category: cat, updatedAt: new Date().toISOString() }, { merge: true });
-        location.reload();
-    }
+    // Load Faculty Only
+    db.collection("users").where("position", "==", "faculty").onSnapshot(snap => {
+        facultyList = [];
+        snap.forEach(doc => facultyList.push({ id: doc.id, name: doc.data().fullName }));
+    });
 
+    // Render Inventory
     db.collection("library_settings").onSnapshot(snap => {
         const list = document.getElementById('inventory-list');
         list.innerHTML = "";
         snap.forEach(doc => {
             const b = doc.data();
-            list.innerHTML += `<tr class="inv-item" data-name="${(b.title || '').toLowerCase()}">
-                <td><b>${b.title || doc.id}</b></td>
-                <td>${b.category}</td>
-                <td>
-                    <button class="btn-sm" style="background:#dcfce7" onclick="updatePromo('${doc.id}', 'recent', 5)">+ Recent</button>
-                    <button class="btn-sm" style="background:#fef9c3" onclick="updatePromo('${doc.id}', 'trending', 10)">+ Trend</button>
-                </td>
-                <td><button class="btn-sm" style="background:#fee2e2" onclick="deleteBook('${doc.id}')">Delete</button></td>
-            </tr>`;
+            list.innerHTML += `
+                <tr class="inv-item" data-name="${(b.title || '').toLowerCase()}">
+                    <td><b>${b.title || doc.id}</b></td>
+                    <td id="cat-cell-${doc.id}">${b.category || 'Unassigned'}</td>
+                    <td>
+                        <div style="position:relative; display:inline-block;">
+                            <button class="btn-sm" style="background:#dcfce7" onclick="toggleMenu('cat-menu-${doc.id}')">➕ Category</button>
+                            <div id="cat-menu-${doc.id}" class="dropdown-menu">
+                                ${categories.map(c => `<div class="dropdown-item" onclick="updateCat('${doc.id}', '${c}')">${c}</div>`).join('')}
+                            </div>
+                        </div>
+                        <div style="position:relative; display:inline-block; margin-left:10px;">
+                            <button class="btn-sm" style="background:#f3e8ff" onclick="toggleMenu('rec-menu-${doc.id}')">⭐ Recommend</button>
+                            <div id="rec-menu-${doc.id}" class="dropdown-menu">
+                                <input type="text" class="faculty-search" placeholder="Search Faculty..." onkeyup="filterFaculty(this, '${doc.id}')">
+                                <div id="fac-list-${doc.id}">
+                                    ${facultyList.map(f => `<div class="dropdown-item" onclick="addRec('${doc.id}', '${f.name}')">${f.name}</div>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><button class="btn-sm" style="background:#fee2e2" onclick="deleteBook('${doc.id}')">Delete</button></td>
+                </tr>`;
         });
     });
+
+    function toggleMenu(id) {
+        document.querySelectorAll('.dropdown-menu').forEach(m => { if(m.id !== id) m.classList.remove('show'); });
+        document.getElementById(id).classList.toggle('show');
+    }
+
+    async function updateCat(bookId, cat) {
+        await db.collection("library_settings").doc(bookId).update({ category: cat });
+        document.getElementById(`cat-menu-${bookId}`).classList.remove('show');
+    }
+
+    async function addRec(bookId, facultyName) {
+        await db.collection("recommendations").add({ 
+            bookId, 
+            facultyName, 
+            timestamp: new Date().toISOString() 
+        });
+        alert(`Recommended by ${facultyName}`);
+        document.getElementById(`rec-menu-${bookId}`).classList.remove('show');
+    }
+
+    function filterFaculty(input, bookId) {
+        const q = input.value.toLowerCase();
+        const container = document.getElementById(`fac-list-${bookId}`);
+        container.innerHTML = facultyList
+            .filter(f => f.name.toLowerCase().includes(q))
+            .map(f => `<div class="dropdown-item" onclick="addRec('${bookId}', '${f.name}')">${f.name}</div>`).join('');
+    }
 
     function filterInv() {
         const q = document.getElementById('invSearch').value.toLowerCase();
@@ -128,38 +150,14 @@
         });
     }
 
-    db.collection("users").onSnapshot(snap => {
-        const tbody = document.getElementById('member-body');
-        tbody.innerHTML = "";
-        snap.forEach(doc => {
-            const u = doc.data();
-            const isOnline = (Date.now() - new Date(u.lastActive).getTime()) < 180000;
-            tbody.innerHTML += `<tr>
-                <td><span class="badge ${isOnline?'online':''}">● ${isOnline?'Online':'Offline'}</span></td>
-                <td>${u.fullName}</td><td>${u.email}</td><td>${u.institution || 'N/A'}</td>
-            </tr>`;
-        });
-    });
-
-    db.collection("activity_logs").orderBy("timestamp", "desc").limit(15).onSnapshot(snap => {
-        const tbody = document.getElementById('log-body');
-        tbody.innerHTML = "";
-        snap.forEach(doc => {
-            const l = doc.data();
-            tbody.innerHTML += `<tr><td>${l.userName}</td><td>${l.activityType}</td><td>${new Date(l.timestamp).toLocaleString()}</td></tr>`;
-        });
-    });
-
-    async function updatePromo(id, cat, limit) {
-        const snap = await db.collection("library_settings").where(cat, "==", true).get();
-        if(snap.size >= limit) {
-            let oldestDoc = snap.docs[0].id;
-            await db.collection("library_settings").doc(oldestDoc).update({ [cat]: false });
-        }
-        await db.collection("library_settings").doc(id).update({ [cat]: true, updatedAt: new Date().toISOString() });
-    }
-
     async function deleteBook(id) { if(confirm("Delete this?")) await db.collection("library_settings").doc(id).delete(); }
+    
+    // Close menus on outside click
+    window.onclick = function(event) {
+        if (!event.target.matches('.btn-sm')) {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+        }
+    }
 </script>
 </body>
 </html>
