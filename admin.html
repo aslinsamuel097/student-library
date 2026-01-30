@@ -20,7 +20,7 @@
         .btn-sm { padding: 6px 10px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; margin: 2px; }
         .dropdown-menu { display: none; position: absolute; background: white; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 100; min-width: 180px; padding: 10px; top: 40px; }
         .show { display: block; }
-        .dropdown-item { padding: 8px; cursor: pointer; border-radius: 5px; font-size: 12px; }
+        .dropdown-item { padding: 8px; cursor: pointer; border-radius: 5px; font-size: 12px; color: #333; }
         .dropdown-item:hover { background: #f0f7ff; color: var(--blue); }
         .user-folder { background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; transition: 0.3s; }
         .user-folder:hover { background: #e2e8f0; }
@@ -39,8 +39,8 @@
 <div id="auth-overlay">
     <div class="card" style="text-align:center; max-width:350px;">
         <h2 style="color:var(--blue)">College Admin Login</h2>
-        <input type="text" id="admin-coll-id" placeholder="College ID" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
-        <input type="password" id="admin-pass" placeholder="Password" style="width:100%; padding:10px; margin-bottom:20px; border-radius:8px; border:1px solid #ddd;">
+        <input type="text" id="admin-coll-id" placeholder="College ID" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
+        <input type="password" id="admin-pass" placeholder="Password" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #ddd;">
         <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:12px;" onclick="handleAdminLogin()">Open Panel</button>
         <p id="admin-status" style="color:red; font-size:11px; margin-top:10px; font-weight:600;"></p>
     </div>
@@ -49,25 +49,35 @@
 <div id="master-panel" class="hidden">
     <div class="nav-tabs">
         <button id="t-inv" class="tab-btn active" onclick="switchTab('inv')">Inventory</button>
-        <button id="t-mem" class="tab-btn" onclick="switchTab('mem')">Members</button>
-        <button id="t-stud" class="tab-btn" onclick="switchTab('stud')">Add Students</button>
+        <button id="t-mem" class="tab-btn" onclick="switchTab('mem')">Member Activity</button>
+        <button id="t-stud" class="tab-btn" onclick="switchTab('stud')">Bulk Upload</button>
         <button class="tab-btn" style="background:#ef4444; color:white; margin-left:auto;" onclick="location.reload()">Logout</button>
     </div>
 
     <div id="inv-section" class="card">
-        <h2>📂 PDF Inventory</h2>
-        <table><thead><tr><th>PDF File</th><th>Category</th><th>Promotion</th><th>Action</th></tr></thead><tbody id="inventory-list"></tbody></table>
+        <h2>📂 Global PDF Inventory</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>PDF File</th>
+                    <th>Category</th>
+                    <th>Assign / Recommend / Promo</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="inventory-list"></tbody>
+        </table>
     </div>
 
     <div id="mem-section" class="hidden card">
-        <h3>👥 Member Folders</h3>
+        <h3>👥 Faculty & Member Folders</h3>
         <div id="user-folders-list"></div>
     </div>
 
     <div id="stud-section" class="hidden card">
         <h3>📤 Bulk Student Upload</h3>
         <p style="font-size:11px; color:#64748b; margin-bottom:10px;">Format: Full Name, College ID, Student ID, Password (One per line)</p>
-        <textarea id="bulk-input" placeholder="Aslin Samuel, IMC26, aslin25-27, Aslin@25-27" style="width:100%; height:150px; padding:10px; border-radius:12px; border:1px solid #ddd; font-family: monospace;"></textarea>
+        <textarea id="bulk-input" placeholder="Aslin Samuel, IMC26, aslin25-27, Aslin@25-27" style="width:100%; height:150px; padding:10px; border-radius:12px; border:1px solid #ddd;"></textarea>
         <button class="btn-sm" style="background:var(--blue); color:white; width:100%; margin-top:10px; padding:12px;" onclick="processBulk()">Upload Students</button>
     </div>
 </div>
@@ -94,7 +104,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    const categories = ["Systematic Theology", "CHURCH History", "Mission", "Acts of Apostles", "Synoptic Gospel", "Introduction to BIBLE"];
     const adminAccounts = { "IMC26": "IMC26@theo", "ASLIN26": "ASL@theo", "PHLA26": "PB@theo" };
+    let facultyList = [];
 
     function handleAdminLogin() {
         const cid = document.getElementById('admin-coll-id').value;
@@ -109,17 +121,42 @@
     }
 
     function initAdmin() {
+        // Fetch Faculty list for recommendations
+        db.collection("users").where("position", "==", "faculty").onSnapshot(snap => {
+            facultyList = []; snap.forEach(doc => facultyList.push({ name: doc.data().fullName }));
+        });
+
+        // Inventory Snapshot
         db.collection("library_settings").onSnapshot(snap => {
             const list = document.getElementById('inventory-list'); list.innerHTML = "";
             snap.forEach(doc => {
                 const b = doc.data(); const id = doc.id;
-                list.innerHTML += `<tr><td><b>${b.title || id}</b></td><td>${b.category || 'None'}</td>
-                    <td><button class="btn-sm" style="background:#fef9c3" onclick="updatePromo('${id}','recent', 5)">+Rec</button>
-                    <button class="btn-sm" style="background:#f3e8ff" onclick="updatePromo('${id}','trending', 15)">+Trend</button></td>
-                    <td><button class="btn-sm" onclick="resetB('${id}')">Reset</button></td></tr>`;
+                list.innerHTML += `<tr>
+                    <td><b>${b.title || id}</b></td>
+                    <td>${b.category || '<span style="color:#94a3b8">Unassigned</span>'}</td>
+                    <td style="position:relative;">
+                        <button class="btn-sm" style="background:#dcfce7" onclick="toggleM('c-${id}')">📁 Category</button>
+                        <div id="c-${id}" class="dropdown-menu">
+                            ${categories.map(c => `<div class="dropdown-item" onclick="upd('${id}','category','${c}')">${c}</div>`).join('')}
+                        </div>
+                        
+                        <button class="btn-sm" style="background:#f3e8ff" onclick="toggleM('r-${id}')">⭐ Faculty Rec</button>
+                        <div id="r-${id}" class="dropdown-menu">
+                            ${facultyList.length ? facultyList.map(f => `<div class="dropdown-item" onclick="addRec('${id}','${f.name}')">${f.name}</div>`).join('') : '<div class="dropdown-item">No Faculty Found</div>'}
+                        </div>
+
+                        <button class="btn-sm" style="background:#fef9c3" onclick="toggleM('p-${id}')">🔥 Promo</button>
+                        <div id="p-${id}" class="dropdown-menu">
+                            <div class="dropdown-item" onclick="updatePromo('${id}','recent', 5)">Add to Recent (Limit 5)</div>
+                            <div class="dropdown-item" onclick="updatePromo('${id}','trending', 15)">Add to Trending (Limit 15)</div>
+                        </div>
+                    </td>
+                    <td><button class="btn-sm" onclick="resetB('${id}')">Reset</button></td>
+                </tr>`;
             });
         });
 
+        // Users Snapshot
         db.collection("users").onSnapshot(snap => {
             const list = document.getElementById('user-folders-list'); list.innerHTML = "";
             snap.forEach(doc => {
@@ -127,6 +164,13 @@
                 list.innerHTML += `<div class="user-folder" onclick="openFolder('${doc.id}', '${u.fullName}')">📂 <b>${u.fullName}</b><br><small>${u.collegeId} | ${u.studentId}</small></div>`;
             });
         });
+    }
+
+    async function updatePromo(id, type, limit) {
+        const snap = await db.collection("library_settings").where(type, "==", true).orderBy("updatedAt", "asc").get();
+        if (snap.size >= limit) { await db.collection("library_settings").doc(snap.docs[0].id).update({ [type]: false }); }
+        await db.collection("library_settings").doc(id).update({ [type]: true, updatedAt: new Date().toISOString() });
+        alert("Promotion Updated!");
     }
 
     async function processBulk() {
@@ -161,12 +205,12 @@
             <div class="stat-box"><span class="stat-label">App Usage</span><div class="stat-value">${fmt(stats.app)}</div></div>
             <div class="stat-box"><span class="stat-label">Read Online</span><div class="stat-value">${fmt(stats.preview)}</div></div>
             <div class="stat-box" style="grid-column: span 2;"><span class="stat-label">Borrowed Reading</span><div class="stat-value">${fmt(stats.borrowRead)}</div></div>
-        </div><h4>📚 Borrows</h4>`;
+        </div><h4>📚 Current Borrows</h4>`;
         borrows.forEach(b => { 
             const d = b.data(); const left = 7 - Math.ceil(Math.abs(new Date() - new Date(d.borrowedAt))/(1000*60*60*24));
-            html += `<p style="font-size:11px; border-bottom:1px solid #eee;"><b>${d.title}</b> (${left} days left)</p>`;
+            html += `<p style="font-size:11px; border-bottom:1px solid #eee; padding:5px 0;"><b>${d.title}</b> (${left} days left)</p>`;
         });
-        document.getElementById('modal-body').innerHTML = html;
+        document.getElementById('modal-body').innerHTML = html || "No data available.";
     }
 
     function switchTab(t) {
@@ -178,13 +222,10 @@
         document.getElementById('t-stud').classList.toggle('active', t === 'stud');
     }
 
-    async function updatePromo(id, type, limit) {
-        const snap = await db.collection("library_settings").where(type, "==", true).orderBy("updatedAt", "asc").get();
-        if (snap.size >= limit) { await db.collection("library_settings").doc(snap.docs[0].id).update({ [type]: false }); }
-        await db.collection("library_settings").doc(id).update({ [type]: true, updatedAt: new Date().toISOString() });
-    }
-
-    async function resetB(id) { await db.collection("library_settings").doc(id).update({ category: null, recent: false, trending: false }); }
+    function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => m.id !== id ? m.classList.remove('show') : null); document.getElementById(id).classList.toggle('show'); }
+    async function upd(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); alert("Category Set: " + v); }
+    async function addRec(id, f) { await db.collection("recommendations").add({ bookId: id, facultyName: f, timestamp: new Date().toISOString() }); alert("Faculty Recommendation Added!"); }
+    async function resetB(id) { if(confirm("Clear all settings for this PDF?")) await db.collection("library_settings").doc(id).update({ category: null, recent: false, trending: false }); }
 </script>
 </body>
 </html>
