@@ -9,6 +9,7 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const db = firebase.firestore();
 const auth = firebase.auth();
 
@@ -24,26 +25,32 @@ setInterval(() => {
     if(c) c.innerText = new Date().toLocaleTimeString();
 }, 1000);
 
-/* LOGIN */
+/* =========================
+   REDIRECT LOGIN (NO POPUP)
+   ========================= */
 async function handleLogin() {
-    const p = new firebase.auth.GoogleAuthProvider();
-    document.getElementById('login-status').innerText = "Opening Google Sign-in...";
-    try { 
-        await auth.signInWithPopup(p); 
-    } catch(e) { 
-        console.error(e);
-        document.getElementById('login-status').innerText = "Popup blocked. Allow popups.";
-    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    document.getElementById('login-status').innerText = "Redirecting to Google login...";
+    await auth.signInWithRedirect(provider);
 }
+
+/* HANDLE REDIRECT RESULT */
+auth.getRedirectResult().catch(err => {
+    console.error("Redirect Error:", err);
+    const s = document.getElementById('login-status');
+    if(s) s.innerText = "Login failed. Please try again.";
+});
 
 /* AUTH STATE */
 auth.onAuthStateChanged(user => {
     if(user) {
         currentUser = user;
         sessionStart = Date.now();
+
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
-        document.getElementById('p-name').innerText = user.displayName;
+        document.getElementById('p-name').innerText = user.displayName || "User";
+
         loadLib();
         listenBorrows();
         logAct("App Opened");
@@ -64,10 +71,11 @@ function logAct(type, dur = "0s") {
     });
 }
 
-/* PDF */
+/* PDF READER */
 function openPdf(id, s, task) {
     readStart = Date.now();
     readTask = task;
+
     document.getElementById('pdf-frame').src = `public/${id}${s}.pdf#toolbar=0`;
     document.getElementById('reader-overlay').classList.remove('hidden');
 }
@@ -82,7 +90,7 @@ function closeReader() {
 }
 
 /* RENDER BOOK */
-function renderB(id, t, cat) {
+function renderB(id, t) {
     return `
     <div class="book-item">
         <div class="sliding-container">
@@ -107,8 +115,8 @@ function loadLib() {
         snap.forEach(doc => {
             const b = doc.data();
             allBooks.push({id: doc.id, ...b});
-            if(b.recent) rL.innerHTML += renderB(doc.id, b.title, b.category);
-            if(b.trending) tL.innerHTML += renderB(doc.id, b.title, b.category);
+            if(b.recent) rL.innerHTML += renderB(doc.id, b.title);
+            if(b.trending) tL.innerHTML += renderB(doc.id, b.title);
         });
     });
 }
@@ -141,6 +149,7 @@ function handleSuggest(q) {
 /* CATEGORY */
 async function loadCat(n) {
     if(!n) return;
+
     document.getElementById('cat-name').innerText = n;
     document.getElementById('cat-view').classList.remove('hidden');
 
@@ -150,10 +159,13 @@ async function loadCat(n) {
 
     const l = document.getElementById('cat-list'); 
     l.innerHTML = "";
-    snap.forEach(doc => l.innerHTML += renderB(doc.id, doc.data().title));
+
+    snap.forEach(doc => {
+        l.innerHTML += renderB(doc.id, doc.data().title);
+    });
 }
 
-/* BORROW */
+/* BORROWS */
 function listenBorrows() {
     db.collection("borrows")
       .where("userId", "==", currentUser.uid)
@@ -163,7 +175,10 @@ function listenBorrows() {
 
         snap.forEach(doc => {
             const b = doc.data();
-            const days = 7 - Math.ceil(Math.abs(new Date() - new Date(b.borrowedAt)) / (1000*60*60*24));
+            const days = 7 - Math.ceil(
+                Math.abs(new Date() - new Date(b.borrowedAt)) / (1000*60*60*24)
+            );
+
             list.innerHTML += `
             <div class="book-item">
                 <span><b>${b.title}</b> (${days} days left)</span>
@@ -176,10 +191,13 @@ function listenBorrows() {
     });
 }
 
-/* BORROW (FIXED SECURITY BASIC) */
+/* BORROW */
 async function borrowB(id, t) {
     const code = prompt("Enter borrow code:");
-    if(code !== "BORROW2026") return alert("Invalid code");
+    if(code !== "BORROW2026") {
+        alert("Invalid borrow code");
+        return;
+    }
 
     await db.collection("borrows").add({
         userId: currentUser.uid,
@@ -189,7 +207,7 @@ async function borrowB(id, t) {
     });
 }
 
-/* TABS FIX */
+/* TABS */
 function switchMainTab(t) {
     document.getElementById('lib-view').classList.toggle('hidden', t !== 'lib');
     document.getElementById('prof-view').classList.toggle('hidden', t !== 'prof');
@@ -202,6 +220,7 @@ function switchMainTab(t) {
 function logout() {
     const dur = Math.round((Date.now() - sessionStart)/1000) + "s";
     logAct("App Closed", dur);
+
     auth.signOut().then(() => location.reload());
 }
 </script>
