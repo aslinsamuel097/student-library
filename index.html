@@ -31,28 +31,22 @@
         .btn-blue { background: var(--blue); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 11px; }
         .hidden { display: none !important; }
         #reader-overlay { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; }
-        .login-field { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 15px; font-family: 'Poppins'; outline: none; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div id="auth-screen">
-    <div class="glass-card" style="max-width:350px; margin: 60px auto; text-align:center; padding: 30px;">
-        <h2 style="color:var(--blue); margin-bottom: 5px;">Jesus is the Saviour</h2>
-        <p style="font-size:11px; color:#64748b; margin-bottom:25px;">Theological Student Library</p>
-        
-        <input type="text" id="login-coll-id" class="login-field" placeholder="College ID">
-        <input type="text" id="login-stud-id" class="login-field" placeholder="Student ID">
-        <input type="password" id="login-pass" class="login-field" placeholder="Password">
-
-        <button class="btn-blue" style="width:100%; padding:15px; font-size:14px; border-radius: 12px;" onclick="handleCustomLogin()">Enter Library</button>
-        <div id="login-status" style="margin-top:15px; font-size:11px; color:#ef4444; font-weight:600;"></div>
+    <div class="glass-card" style="max-width:350px; margin: 80px auto; text-align:center;">
+        <h2 style="color:var(--blue)">Jesus is the Saviour</h2>
+        <p style="font-size:12px; color:#64748b; margin-bottom:20px;">Theological Student Library</p>
+        <button class="btn-blue" style="width:100%; padding:15px;" onclick="handleLogin()">Login with Google</button>
+        <div id="login-status" style="margin-top:15px; font-size:11px; color:#64748b;"></div>
     </div>
 </div>
 
 <div id="dashboard" class="hidden">
     <div class="header-bar">
-        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">JESUS IS THE SAVIOUR</span><h1 style="margin:0; font-size:18px;">Library</h1></div>
+        <div><span style="color:var(--blue); font-weight:800; font-size:12px;">Theological Library</span><h1 style="margin:0; font-size:18px;">Library</h1></div>
         <div id="clock" class="clock-box">00:00:00</div>
     </div>
     <div class="nav-tabs">
@@ -75,7 +69,7 @@
         </div>
     </div>
     <div id="prof-view" class="hidden">
-        <div class="glass-card"><h3>Profile</h3><p id="p-name" style="font-weight:800; color:var(--blue);"></p><button class="btn-blue" style="background:#ef4444" onclick="logout()">Logout</button></div>
+        <div class="glass-card"><h3>Profile</h3><p id="p-name"></p><button class="btn-blue" style="background:#ef4444" onclick="logout()">Logout</button></div>
         <div class="glass-card"><h3>📚 Borrowed Collection</h3><div id="borrowed-list"></div></div>
     </div>
     <div id="cat-view" class="hidden">
@@ -95,45 +89,42 @@
 <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg",
-      authDomain: "theolib.in",
+      authDomain: "student-library-4a4e7.firebaseapp.com", // Stable auth handler
       projectId: "student-library-4a4e7",
       storageBucket: "student-library-4a4e7.firebasestorage.app",
       messagingSenderId: "827419448917",
       appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc"
     };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const db = firebase.firestore(); const auth = firebase.auth();
     let allBooks = []; let currentUser = null; let sessionStart = null; let readStart = null; let readTask = "";
 
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
 
-    async function handleCustomLogin() {
-        const collId = document.getElementById('login-coll-id').value;
-        const studId = document.getElementById('login-stud-id').value;
-        const pass = document.getElementById('login-pass').value;
-        const status = document.getElementById('login-status');
-
-        if(!collId || !studId || !pass) { status.innerText = "Please fill all fields"; return; }
-        status.innerText = "Verifying...";
-
-        const snap = await db.collection("users")
-            .where("collegeId", "==", collId)
-            .where("studentId", "==", studId)
-            .where("password", "==", pass)
-            .get();
-
-        if(!snap.empty) {
-            const userData = snap.docs[0].data();
-            currentUser = { uid: snap.docs[0].id, displayName: userData.fullName };
-            sessionStart = Date.now();
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('p-name').innerText = currentUser.displayName;
-            loadLib(); listenBorrows(); logAct("App Opened");
-        } else {
-            status.innerText = "Invalid ID or Password.";
+    // FIX: Using Popup exclusively avoids the /__/auth/handler 404 error on Vercel
+    async function handleLogin() {
+        const p = new firebase.auth.GoogleAuthProvider();
+        document.getElementById('login-status').innerText = "Opening Google Sign-in...";
+        try { 
+            await auth.signInWithPopup(p); 
+        } catch(e) { 
+            console.error("Login Error:", e);
+            document.getElementById('login-status').innerText = "Login failed. Please allow popups.";
         }
     }
+
+    auth.onAuthStateChanged(user => {
+        if(user) {
+            currentUser = user; sessionStart = Date.now();
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('p-name').innerText = user.displayName;
+            loadLib(); listenBorrows(); logAct("App Opened");
+        } else {
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+        }
+    });
 
     function logAct(type, dur = "0s") {
         if(currentUser) db.collection("activity_logs").add({ 
@@ -213,7 +204,7 @@
 
     async function borrowB(id, t) { if(prompt("Code:") === "BORROW2026") await db.collection("borrows").add({ userId: currentUser.uid, bookId: id, title: t, borrowedAt: new Date().toISOString() }); }
     function switchMainTab(t) { document.getElementById('lib-view').classList.toggle('hidden', t !== 'lib'); document.getElementById('prof-view').classList.toggle('hidden', t !== 'prof'); }
-    function logout() { const dur = Math.round((Date.now() - sessionStart)/1000) + "s"; logAct("App Closed", dur); location.reload(); }
+    function logout() { const dur = Math.round((Date.now() - sessionStart)/1000) + "s"; logAct("App Closed", dur); auth.signOut().then(() => location.reload()); }
 </script>
 </body>
 </html>
