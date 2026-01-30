@@ -11,16 +11,13 @@
     <style>
         :root { --blue: #3b82f6; --bg: #f0f4f8; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
-        .glass-card { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .glass-card { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box; }
         .dashboard-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; align-items: start; }
-        .search-box { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; outline: none; margin-bottom: 20px; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: #e2e8f0; }
+        .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: #e2e8f0; font-size: 14px; }
         .tab-btn.active { background: var(--blue); color: white; }
-        .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
-        .folder { background: #f8fafc; padding: 10px; border-radius: 12px; text-align: center; cursor: pointer; font-size: 10px; font-weight: 600; border: 1px solid #e2e8f0; }
-        .book-item { background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-        .btn-blue { background: var(--blue); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; }
+        .btn-blue { background: var(--blue); color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .btn-blue:hover { opacity: 0.9; transform: translateY(-1px); }
         .hidden { display: none !important; }
         #reader-overlay { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; }
     </style>
@@ -28,9 +25,16 @@
 <body>
 
 <div id="auth-screen">
-    <div class="glass-card" style="max-width:400px; margin: 50px auto; text-align:center;">
-        <h2 style="color:var(--blue)">Theological Library</h2>
-        <button class="btn-blue" style="width:100%; padding:15px;" onclick="signInWithGoogle()">Login with Google</button>
+    <div class="glass-card" style="max-width:400px; margin: 80px auto; text-align:center; padding: 40px 20px;">
+        <h2 style="color:var(--blue); margin-bottom: 10px;">Jesus is the Saviour</h2>
+        <p style="color: #64748b; margin-bottom: 30px;">Theological Student Library</p>
+        <button id="login-btn" class="btn-blue" style="width:100%;" onclick="signInWithGoogle()">Login with Google</button>
+        
+        <div id="reg-form" class="hidden" style="margin-top:20px;">
+            <p>Complete your profile to enter:</p>
+            <input type="text" id="inst" placeholder="Institution Name" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #ddd;">
+            <button class="btn-blue" style="width:100%" onclick="saveReg()">Enter Library</button>
+        </div>
     </div>
 </div>
 
@@ -41,52 +45,69 @@
     </div>
 
     <div id="lib-view">
-        <input type="text" id="libSearch" class="search-box" placeholder="🔍 Search (min 3 chars)..." onkeyup="handleSearch(this.value)">
-
         <div class="dashboard-container">
             <div class="glass-card"><h3>🕒 Recent Uploads</h3><div id="recent-list"></div></div>
             <div class="glass-card"><h3>🔥 Trending Now</h3><div id="trending-list"></div></div>
             <div class="glass-card">
-                <h3>📂 Folders</h3>
-                <div class="folder-grid">
-                    <div class="folder" onclick="loadCat('Systematic Theology')">📖 Theology</div>
-                    <div class="folder" onclick="loadCat('CHURCH History')">⛪ History</div>
-                    <div class="folder" onclick="loadCat('Mission')">🌍 Mission</div>
-                    <div class="folder" onclick="loadCat('Acts of Apostles')">📜 Acts</div>
-                    <div class="folder" onclick="loadCat('Synoptic Gospel')">✝️ Gospel</div>
-                    <div class="folder" onclick="loadCat('Introduction to BIBLE')">📘 Bible</div>
+                <h3>📂 Categories</h3>
+                <div id="category-list" style="display: flex; flex-wrap: wrap; gap: 5px;">
+                    <button class="tab-btn" onclick="loadCat('Systematic Theology')">Theology</button>
+                    <button class="tab-btn" onclick="loadCat('CHURCH History')">History</button>
+                    <button class="tab-btn" onclick="loadCat('Mission')">Mission</button>
                 </div>
             </div>
         </div>
-        <div class="glass-card"><h3>🎓 Faculty Recommendations</h3><div id="recommendation-list"></div></div>
     </div>
 
     <div id="prof-view" class="hidden">
-        <div class="glass-card"><h3>My Profile</h3><p id="p-name"></p><button class="btn-blue" style="background:#ef4444" onclick="logout()">Logout</button></div>
-        <div class="glass-card"><h3>📚 My Borrowed Books</h3><div id="borrowed-list"></div></div>
-    </div>
-
-    <div id="cat-view" class="hidden">
-        <button onclick="document.getElementById('cat-view').classList.add('hidden')" class="btn-blue" style="background:#64748b;">← Back</button>
-        <h3 id="cat-name"></h3><div id="cat-list"></div>
+        <div class="glass-card">
+            <h3>Student Profile</h3>
+            <p id="p-name" style="font-weight:bold;"></p>
+            <button class="btn-blue" style="background:#ef4444;" onclick="logout()">Logout</button>
+        </div>
+        <div class="glass-card"><h3>📚 Borrowed Books</h3><div id="borrowed-list"></div></div>
     </div>
 </div>
 
 <script>
-    // Initialization code same as previously shared stable versions
+    const firebaseConfig = {
+      apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg",
+      authDomain: "student-library-4a4e7.firebaseapp.com",
+      projectId: "student-library-4a4e7",
+      storageBucket: "student-library-4a4e7.firebasestorage.app",
+      messagingSenderId: "827419448917",
+      appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc"
+    };
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
+
     let currentUser = null;
 
+    // LOGIN FUNCTION
+    async function signInWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        try {
+            await auth.signInWithPopup(provider);
+        } catch (error) {
+            alert("Login Failed: " + error.message);
+        }
+    }
+
+    // AUTH STATE LISTENER
     auth.onAuthStateChanged(async user => {
         if(user) {
             currentUser = user;
-            const doc = await db.collection("users").doc(user.uid).get();
-            if(doc.exists) {
+            const userDoc = await db.collection("users").doc(user.uid).get();
+            if(userDoc.exists) {
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
                 document.getElementById('p-name').innerText = user.displayName;
-                loadLib(); listenBorrows();
+                loadLibraryData();
+            } else {
+                document.getElementById('reg-form').classList.remove('hidden');
+                document.getElementById('login-btn').classList.add('hidden');
             }
         } else {
             document.getElementById('auth-screen').classList.remove('hidden');
@@ -94,46 +115,40 @@
         }
     });
 
-    function loadLib() {
-        db.collection("library_settings").onSnapshot(snap => {
-            const rL = document.getElementById('recent-list'), tL = document.getElementById('trending-list');
-            rL.innerHTML = ""; tL.innerHTML = "";
-            snap.forEach(doc => {
-                const b = doc.data();
-                if(b.recent) rL.innerHTML += renderB(doc.id, b.title);
-                if(b.trending) tL.innerHTML += renderB(doc.id, b.title);
-            });
+    function logout() { auth.signOut().then(() => location.reload()); }
+
+    async function saveReg() {
+        const institution = document.getElementById('inst').value;
+        if(!institution) return alert("Please enter institution name");
+        await db.collection("users").doc(currentUser.uid).set({
+            fullName: currentUser.displayName,
+            email: currentUser.email,
+            institution: institution,
+            lastActive: new Date().toISOString()
         });
-
-        db.collection("recommendations").onSnapshot(snap => {
-            const list = document.getElementById('recommendation-list');
-            list.innerHTML = "";
-            snap.forEach(doc => {
-                const r = doc.data();
-                list.innerHTML += `<div class="book-item"><span><b>${r.facultyName}</b> recommends <b>${r.bookId}</b></span><button class="btn-blue" onclick="openPdf('${r.bookId}', '_read_online')">Open</button></div>`;
-            });
-        });
+        location.reload();
     }
 
-    function renderB(id, t) {
-        return `<div class="book-item"><span><b>${t || id}</b></span><button class="btn-blue" onclick="borrowBook('${id}', '${t}')">Borrow</button></div>`;
-    }
-
-    async function loadCat(n) {
-        document.getElementById('cat-name').innerText = n;
-        document.getElementById('cat-view').classList.remove('hidden');
-        const snap = await db.collection("library_settings").where("category", "==", n).get();
-        const l = document.getElementById('cat-list'); l.innerHTML = "";
-        snap.forEach(doc => l.innerHTML += renderB(doc.id, doc.data().title));
-    }
-
-    function openPdf(id, s) { window.open(`public/${id}${s}.pdf`, '_blank'); }
     function switchMainTab(t) {
         document.getElementById('lib-view').classList.toggle('hidden', t !== 'lib');
         document.getElementById('prof-view').classList.toggle('hidden', t !== 'prof');
+        document.getElementById('t-lib').classList.toggle('active', t === 'lib');
+        document.getElementById('t-prof').classList.toggle('active', t === 'prof');
     }
-    function signInWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-    function logout() { auth.signOut().then(() => location.reload()); }
+
+    function loadLibraryData() {
+        db.collection("library_settings").onSnapshot(snap => {
+            const rList = document.getElementById('recent-list');
+            const tList = document.getElementById('trending-list');
+            rList.innerHTML = ""; tList.innerHTML = "";
+            snap.forEach(doc => {
+                const b = doc.data();
+                const item = `<div style="padding:10px; border-bottom:1px solid #eee;"><b>${b.title || doc.id}</b></div>`;
+                if(b.recent) rList.innerHTML += item;
+                if(b.trending) tList.innerHTML += item;
+            });
+        });
+    }
 </script>
 </body>
 </html>
