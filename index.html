@@ -15,17 +15,12 @@
             --border: #334155;
         }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
-        
-        /* Auth Screen */
         #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: var(--card-bg); padding: 30px; border-radius: 24px; width: 100%; max-width: 350px; text-align: center; border: 1px solid var(--border); }
         .login-field { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; margin-bottom: 15px; outline: none; box-sizing: border-box; }
-
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .logo-section h1 { margin: 0; font-size: 20px; font-weight: 800; }
         .logo-section span { color: var(--blue); font-size: 10px; font-weight: 800; text-transform: uppercase; }
-
-        /* Stats Grid */
         .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
         .stat-card { padding: 20px; border-radius: 12px; color: white; display: flex; flex-direction: column; position: relative; height: 110px; justify-content: center; cursor: pointer; transition: transform 0.2s; }
         .stat-card.blue { background: #2563eb; }
@@ -33,21 +28,19 @@
         .stat-card.green { background: #10b981; }
         .stat-card.purple-profile { background: #a855f7; }
         .stat-card p { margin: 5px 0 0; font-size: 28px; font-weight: 800; }
-
         .main-layout { display: grid; grid-template-columns: 2fr 1.2fr; gap: 20px; }
         .glass-card { background: var(--card-bg); border-radius: 20px; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
-        .search-box { width: 100%; padding: 12px 15px; border-radius: 10px; background: #1e293b; border: 1px solid var(--border); color: white; margin-bottom: 25px; outline: none; }
-
         .book-item { background: #0f172a; padding: 15px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .book-info b { display: block; font-size: 14px; }
         .book-info small { color: var(--text-sub); font-size: 11px; }
         .btn-preview { background: var(--blue); color: white; border: none; padding: 6px 15px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; }
-
-        /* Overlays */
         #full-lib-view, #borrow-view, #reader-overlay, #profile-overlay { position: fixed; inset: 0; z-index: 6000; background: var(--bg); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
         #reader-overlay { background: white; padding: 0; }
         .view-header { padding: 15px; background: #1e293b; color: white; display: flex; justify-content: space-between; align-items: center; border-radius: 15px; margin-bottom: 20px; }
+        .cat-item { cursor:pointer; background:#0f172a; padding:12px; border-radius:12px; margin-bottom:8px; border:1px solid var(--border); font-size:13px; font-weight:600; transition:0.2s; }
+        .cat-item:hover { border-color:var(--blue); transform:translateX(5px); }
         .hidden { display: none !important; }
+        @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -88,10 +81,14 @@
             </div>
             <div class="sidebar-column">
                 <div class="glass-card">
-                    <h3>📂 Categories</h3>
+                    <h3 style="margin-top:0;">📂 Categories</h3>
                     <div id="category-box">
-                        <div style="cursor:pointer; background:#0f172a; padding:10px; border-radius:10px; margin-bottom:5px;" onclick="loadCat('Theology')">📖 Theology</div>
-                        <div style="cursor:pointer; background:#0f172a; padding:10px; border-radius:10px; margin-bottom:5px;" onclick="loadCat('History')">⛪ History</div>
+                        <div class="cat-item" onclick="loadCat('Theology')">📖 Theology</div>
+                        <div class="cat-item" onclick="loadCat('History')">⛪ History</div>
+                        <div class="cat-item" onclick="loadCat('Mission')">🌍 Mission</div>
+                        <div class="cat-item" onclick="loadCat('Acts')">📜 Acts</div>
+                        <div class="cat-item" onclick="loadCat('Gospel')">✝️ Gospel</div>
+                        <div class="cat-item" onclick="loadCat('Bible')">📘 Bible</div>
                     </div>
                 </div>
             </div>
@@ -137,21 +134,16 @@
             const studId = document.getElementById('login-stud-id').value;
             const pass = document.getElementById('login-pass').value;
             if(!collId || !studId || !pass) return;
-
             const snap = await db.collection("users").where("collegeId","==",collId).where("studentId","==",studId).where("password","==",pass).get();
             if(!snap.empty) {
                 const u = snap.docs[0].data();
                 if(u.expiryDate && new Date() > new Date(u.expiryDate).setHours(23,59,59)) { alert("Expired"); return; }
-                currentUser = { uid: snap.docs[0].id, ...u };
-                sessionStart = Date.now();
+                currentUser = { uid: snap.docs[0].id, ...u }; sessionStart = Date.now();
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
-                document.getElementById('mini-name').innerText = u.fullName;
-                document.getElementById('prof-name').innerText = u.fullName;
-                document.getElementById('p-coll-id').innerText = u.collegeId;
-                document.getElementById('p-stud-id').innerText = u.studentId;
-                document.getElementById('mini-initial').innerText = u.fullName[0];
-                document.getElementById('prof-initial').innerText = u.fullName[0];
+                document.getElementById('mini-name').innerText = u.fullName; document.getElementById('prof-name').innerText = u.fullName;
+                document.getElementById('p-coll-id').innerText = u.collegeId; document.getElementById('p-stud-id').innerText = u.studentId;
+                document.getElementById('mini-initial').innerText = u.fullName[0]; document.getElementById('prof-initial').innerText = u.fullName[0];
                 loadLib(); listenBorrows();
             } else { alert("Invalid Login"); }
         }
@@ -166,10 +158,8 @@
                     const html = `<div class="book-item"><div class="book-info"><b>${b.title}</b><small>${b.category}</small></div>
                         <div style="display:flex; gap:5px;"><button class="btn-preview" onclick="openPdf('${id}','${b.title}','Read Online')">Preview</button>
                         <button class="btn-preview" style="background:#475569" onclick="borrowB('${id}','${b.title}')">Borrow</button></div></div>`;
-                    collegeBooks.push({id, ...b});
-                    fullList.innerHTML += html;
-                    if(b.recent) rList.innerHTML += html;
-                    if(b.trending) tList.innerHTML += html;
+                    collegeBooks.push({id, ...b}); fullList.innerHTML += html;
+                    if(b.recent) rList.innerHTML += html; if(b.trending) tList.innerHTML += html;
                 });
                 document.getElementById('top-total').innerText = snap.size;
             });
@@ -177,11 +167,9 @@
 
         function listenBorrows() {
             db.collection("borrows").where("userId","==",currentUser.uid).onSnapshot(snap => {
-                const list = document.getElementById('borrow-book-list');
-                list.innerHTML = "";
+                const list = document.getElementById('borrow-book-list'); list.innerHTML = "";
                 snap.forEach(doc => {
-                    const b = doc.data();
-                    const left = 7 - Math.ceil(Math.abs(new Date() - new Date(b.borrowedAt)) / (1000 * 60 * 60 * 24));
+                    const b = doc.data(); const left = 7 - Math.ceil(Math.abs(new Date() - new Date(b.borrowedAt)) / (1000 * 60 * 60 * 24));
                     list.innerHTML += `<div class="book-item"><div class="book-info"><b>${b.title}</b><small>${left} days left</small></div>
                         <div style="display:flex; gap:5px;"><button class="btn-preview" onclick="openPdf('${b.bookId}','${b.title}','Borrowed')">Open</button>
                         <button class="btn-preview" style="background:#ef4444" onclick="db.collection('borrows').doc('${doc.id}').delete()">Return</button></div></div>`;
@@ -192,11 +180,8 @@
         }
 
         async function borrowB(id, t) { if(prompt("Code:") === "BORROW2026") await db.collection("borrows").add({ userId: currentUser.uid, bookId: id, title: t, borrowedAt: new Date().toISOString() }); }
-        
         function openPdf(id, title, task) {
-            readStart = Date.now();
-            document.getElementById('reader-title').innerText = title;
-            // Matches your GitHub naming convention: "Name_read_online.pdf" or "Name.pdf"
+            readStart = Date.now(); document.getElementById('reader-title').innerText = title;
             const fileName = task === 'Read Online' ? `${id}_read_online` : id;
             document.getElementById('pdf-frame').src = `public/${fileName}.pdf#toolbar=0`;
             document.getElementById('reader-overlay').classList.remove('hidden');
@@ -207,10 +192,8 @@
                 const dur = Math.round((Date.now()-readStart)/1000) + "s";
                 await db.collection("activity_logs").add({ userId: currentUser.uid, activityType: "Reading", duration: dur, timestamp: new Date().toISOString() });
             }
-            document.getElementById('reader-overlay').classList.add('hidden');
-            document.getElementById('pdf-frame').src = "";
+            document.getElementById('reader-overlay').classList.add('hidden'); document.getElementById('pdf-frame').src = "";
         }
-        
         function showFullLibrary() { document.getElementById('full-lib-view').classList.remove('hidden'); }
         function showBorrowView() { document.getElementById('borrow-view').classList.remove('hidden'); }
         function closeView(id) { document.getElementById(id).classList.add('hidden'); }
@@ -218,7 +201,8 @@
         function loadCat(cat) { 
             const list = document.getElementById('full-book-list'); list.innerHTML = "";
             collegeBooks.filter(b => b.category === cat).forEach(b => {
-                list.innerHTML += `<div class="book-item"><div class="book-info"><b>${b.title}</b><small>${b.category}</small></div><button class="btn-preview" onclick="openPdf('${b.id}','${b.title}','Read Online')">Preview</button></div>`;
+                list.innerHTML += `<div class="book-item"><div class="book-info"><b>${b.title}</b><small>${b.category}</small></div>
+                    <button class="btn-preview" onclick="openPdf('${b.id}','${b.title}','Read Online')">Preview</button></div>`;
             });
             showFullLibrary();
         }
