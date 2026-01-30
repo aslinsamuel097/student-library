@@ -29,7 +29,7 @@
 
 <div id="auth-screen">
     <div class="glass-card" style="max-width:400px; margin: 50px auto; text-align:center;">
-        <h2 style="color:var(--blue)">Sign In</h2>
+        <h2 style="color:var(--blue)">Theological Library</h2>
         <button class="btn-blue" style="width:100%; padding:15px;" onclick="signInWithGoogle()">Login with Google</button>
     </div>
 </div>
@@ -41,12 +41,11 @@
     </div>
 
     <div id="lib-view">
-        <input type="text" id="libSearch" class="search-box" placeholder="🔍 Search books (min 3 chars)..." onkeyup="handleSearch(this.value)">
-        <div id="search-results" class="glass-card hidden"><h3>🔍 Search Results</h3><div id="res-list"></div></div>
+        <input type="text" id="libSearch" class="search-box" placeholder="🔍 Search (min 3 chars)..." onkeyup="handleSearch(this.value)">
 
         <div class="dashboard-container">
-            <div class="glass-card"><h3>🕒 Recent</h3><div id="recent-list"></div></div>
-            <div class="glass-card"><h3>🔥 Trending</h3><div id="trending-list"></div></div>
+            <div class="glass-card"><h3>🕒 Recent Uploads</h3><div id="recent-list"></div></div>
+            <div class="glass-card"><h3>🔥 Trending Now</h3><div id="trending-list"></div></div>
             <div class="glass-card">
                 <h3>📂 Folders</h3>
                 <div class="folder-grid">
@@ -59,16 +58,11 @@
                 </div>
             </div>
         </div>
-        
         <div class="glass-card"><h3>🎓 Faculty Recommendations</h3><div id="recommendation-list"></div></div>
     </div>
 
     <div id="prof-view" class="hidden">
-        <div class="glass-card">
-            <h3>My Profile</h3>
-            <p id="p-name"></p>
-            <button class="btn-blue" style="background:#ef4444" onclick="logout()">Logout</button>
-        </div>
+        <div class="glass-card"><h3>My Profile</h3><p id="p-name"></p><button class="btn-blue" style="background:#ef4444" onclick="logout()">Logout</button></div>
         <div class="glass-card"><h3>📚 My Borrowed Books</h3><div id="borrowed-list"></div></div>
     </div>
 
@@ -79,40 +73,33 @@
 </div>
 
 <script>
-    // ... Initialization ...
+    // Initialization code same as previously shared stable versions
     const db = firebase.firestore();
     const auth = firebase.auth();
-    let allBooks = [];
-
-    function handleSearch(q) {
-        const box = document.getElementById('search-results');
-        const list = document.getElementById('res-list');
-        if (q.length < 3) { box.classList.add('hidden'); return; }
-        const filtered = allBooks.filter(b => b.title.toLowerCase().includes(q.toLowerCase()));
-        box.classList.remove('hidden');
-        list.innerHTML = filtered.length ? "" : "No books found.";
-        filtered.forEach(b => list.innerHTML += renderB(b.id, b.title));
-    }
+    let currentUser = null;
 
     auth.onAuthStateChanged(async user => {
         if(user) {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('p-name').innerText = user.displayName;
-            loadLib(); listenBorrows();
+            currentUser = user;
+            const doc = await db.collection("users").doc(user.uid).get();
+            if(doc.exists) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('p-name').innerText = user.displayName;
+                loadLib(); listenBorrows();
+            }
+        } else {
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
         }
     });
-
-    function renderB(id, t) {
-        return `<div class="book-item"><span><b>${t}</b></span><button class="btn-blue" onclick="borrowBook('${id}', '${t}')">Borrow</button></div>`;
-    }
 
     function loadLib() {
         db.collection("library_settings").onSnapshot(snap => {
             const rL = document.getElementById('recent-list'), tL = document.getElementById('trending-list');
-            rL.innerHTML = ""; tL.innerHTML = ""; allBooks = [];
+            rL.innerHTML = ""; tL.innerHTML = "";
             snap.forEach(doc => {
-                const b = doc.data(); allBooks.push({ id: doc.id, ...b });
+                const b = doc.data();
                 if(b.recent) rL.innerHTML += renderB(doc.id, b.title);
                 if(b.trending) tL.innerHTML += renderB(doc.id, b.title);
             });
@@ -123,11 +110,24 @@
             list.innerHTML = "";
             snap.forEach(doc => {
                 const r = doc.data();
-                list.innerHTML += `<div class="book-item"><span>${r.facultyName} recommends ${r.bookId}</span></div>`;
+                list.innerHTML += `<div class="book-item"><span><b>${r.facultyName}</b> recommends <b>${r.bookId}</b></span><button class="btn-blue" onclick="openPdf('${r.bookId}', '_read_online')">Open</button></div>`;
             });
         });
     }
 
+    function renderB(id, t) {
+        return `<div class="book-item"><span><b>${t || id}</b></span><button class="btn-blue" onclick="borrowBook('${id}', '${t}')">Borrow</button></div>`;
+    }
+
+    async function loadCat(n) {
+        document.getElementById('cat-name').innerText = n;
+        document.getElementById('cat-view').classList.remove('hidden');
+        const snap = await db.collection("library_settings").where("category", "==", n).get();
+        const l = document.getElementById('cat-list'); l.innerHTML = "";
+        snap.forEach(doc => l.innerHTML += renderB(doc.id, doc.data().title));
+    }
+
+    function openPdf(id, s) { window.open(`public/${id}${s}.pdf`, '_blank'); }
     function switchMainTab(t) {
         document.getElementById('lib-view').classList.toggle('hidden', t !== 'lib');
         document.getElementById('prof-view').classList.toggle('hidden', t !== 'prof');
