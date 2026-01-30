@@ -17,7 +17,6 @@
         }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
         
-        /* Auth Screen */
         #auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: var(--card-bg); padding: 30px; border-radius: 24px; width: 100%; max-width: 350px; text-align: center; border: 1px solid var(--border); }
         .login-field { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; margin-bottom: 15px; outline: none; box-sizing: border-box; }
@@ -28,26 +27,23 @@
 
         .glass-card { background: var(--card-bg); border-radius: 20px; padding: 25px; border: 1px solid var(--border); margin-bottom: 20px; }
         
-        /* Tables */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; padding: 12px; color: var(--text-sub); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        th { text-align: left; padding: 12px; color: var(--text-sub); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
         td { padding: 15px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
         
         .btn-sm { padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; }
         .dropdown-menu { display: none; position: absolute; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 100; min-width: 180px; padding: 10px; top: 40px; }
         .show { display: block; }
-        .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; color: var(--text-main); }
+        .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; color: var(--text-main); transition: 0.2s; }
         .dropdown-item:hover { background: var(--blue); }
 
-        /* Folders & Stats */
         .user-folder { background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid var(--border); }
         .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
         .stat-box { background: #0f172a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
         .stat-val { font-size: 18px; font-weight: 800; color: var(--blue); display: block; }
         .stat-lbl { font-size: 10px; color: var(--text-sub); text-transform: uppercase; }
 
-        /* Overlays */
-        #user-modal, #view-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 6000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        #user-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 6000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .modal-content { background: var(--card-bg); width: 100%; max-width: 650px; border-radius: 24px; padding: 30px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
         .hidden { display: none !important; }
     </style>
@@ -59,7 +55,7 @@
         <h2 style="color:var(--blue)">Admin Control</h2>
         <input type="text" id="admin-coll-id" class="login-field" placeholder="College ID">
         <input type="password" id="admin-pass" class="login-field" placeholder="Password">
-        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px;" onclick="handleAdminLogin()">Login to Master Panel</button>
+        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px;" onclick="handleAdminLogin()">Login to Panel</button>
         <p id="admin-status" style="color:#ef4444; font-size:11px; margin-top:10px; font-weight:600;"></p>
     </div>
 </div>
@@ -113,7 +109,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h3 id="modal-title" style="margin:0;">Profile Report</h3>
             <div style="display:flex; gap:10px;">
-                <button onclick="downloadReport()" class="btn-sm" style="background:var(--blue); color:white;">Download CSV</button>
+                <button onclick="downloadReport()" class="btn-sm" style="background:var(--blue); color:white;">CSV Report</button>
                 <button onclick="document.getElementById('user-modal').classList.add('hidden')" class="btn-sm" style="background:#ef4444; color:white;">Close</button>
             </div>
         </div>
@@ -157,7 +153,9 @@
             const list = document.getElementById('inventory-list'); list.innerHTML = "";
             snap.forEach(doc => {
                 const b = doc.data(); const id = doc.id; const allowed = b.allowedColleges || [];
+                
                 const accessBtn = isSuperAdmin ? `<button class="btn-sm" style="background:var(--purple); color:white;" onclick="toggleM('a-${id}')">🔓 Access</button>` : '';
+                const promoBtn = isSuperAdmin ? `<button class="btn-sm" style="background:var(--orange); color:white;" onclick="toggleM('p-${id}')">🔥 Promo</button>` : '';
                 const deleteBtn = isSuperAdmin ? `<td><button class="btn-sm" style="background:#ef4444; color:white;" onclick="deletePDF('${id}')">🗑️ Delete</button></td>` : '<td>-</td>';
                 
                 list.innerHTML += `<tr>
@@ -167,10 +165,22 @@
                         ${accessBtn}<div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>
                         <button class="btn-sm" style="background:var(--green); color:white;" onclick="toggleM('c-${id}')">📁 Category</button>
                         <div id="c-${id}" class="dropdown-menu">${["Theology", "History", "Mission", "Acts", "Gospel", "Bible"].map(c => `<div class="dropdown-item" onclick="updateField('${id}','category','${c}')">${c}</div>`).join('')}</div>
+                        ${promoBtn}
+                        <div id="p-${id}" class="dropdown-menu">
+                            <div class="dropdown-item" onclick="updatePromo('${id}','recent', 5)">Add to Recent (Limit 5)</div>
+                            <div class="dropdown-item" onclick="updatePromo('${id}','trending', 15)">Add to Trending (Limit 15)</div>
+                        </div>
                     </td>${deleteBtn}</tr>`;
             });
         });
         if(!isSuperAdmin) loadCollegeStudents(currentAdminID);
+    }
+
+    async function updatePromo(id, type, limit) {
+        const snap = await db.collection("library_settings").where(type, "==", true).get();
+        if (snap.size >= limit) { await db.collection("library_settings").doc(snap.docs[0].id).update({ [type]: false }); }
+        await db.collection("library_settings").doc(id).update({ [type]: true, updatedAt: new Date().toISOString() });
+        alert("Promotion Updated!");
     }
 
     async function handleFileUpload() {
@@ -178,11 +188,8 @@
         const title = document.getElementById('pdf-title').value;
         const progress = document.getElementById('upload-progress');
         if(!file || !title) return;
-        
-        const fileID = title.toLowerCase().replace(/\s+/g, '-');
-        const ref = storage.ref(`pdfs/${fileID}.pdf`);
-        const task = ref.put(file);
-        
+        const fileID = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+        const task = storage.ref(`pdfs/${fileID}.pdf`).put(file);
         task.on('state_changed', (s) => progress.innerText = "Progress: " + Math.round((s.bytesTransferred/s.totalBytes)*100) + "%", null, async () => {
             await db.collection("library_settings").doc(fileID).set({ title, category: "Unassigned", allowedColleges: [], recent: true, trending: false, updatedAt: new Date().toISOString() });
             progress.innerText = "✅ Success!";
@@ -255,7 +262,10 @@
         alert("Upload Done");
     }
     function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => m.id !== id ? m.classList.remove('show') : null); document.getElementById(id).classList.toggle('show'); }
-    function switchTab(t) { document.querySelectorAll('.nav-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.id === `t-${t}`)); document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', s.id !== `${t}-section`)); }
+    function switchTab(t) { 
+        document.querySelectorAll('.nav-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.id === `t-${t}`)); 
+        document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', !s.id.startsWith(t))); 
+    }
 </script>
 </body>
 </html>
