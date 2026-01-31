@@ -10,10 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --blue: #3b82f6; --orange: #f97316; --green: #10b981; --purple: #a855f7; --bg: #0b1120; --card-bg: #1e293b; --text-main: #f8fafc; --text-sub: #94a3b8; --border: #334155; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); overflow-x: hidden; }
         #auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: var(--card-bg); padding: 30px; border-radius: 24px; width: 90%; max-width: 350px; text-align: center; border: 1px solid var(--border); }
-        .login-field, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; margin-bottom: 15px; outline: none; box-sizing: border-box; font-family: inherit; }
+        .login-field, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; margin-bottom: 15px; outline: none; box-sizing: border-box; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
         .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: var(--card-bg); color: var(--text-sub); transition: 0.3s; white-space: nowrap; }
         .tab-btn.active { background: var(--blue); color: white; }
@@ -27,10 +27,10 @@
         .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; }
         .dropdown-item:hover { background: var(--blue); color: white; }
         .hidden { display: none !important; }
-        .user-folder { background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .user-folder { background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .search-container { position: relative; margin-bottom: 20px; }
-        .search-bar { width: 100%; padding: 14px 20px; border-radius: 15px; background: #0f172a; border: 1px solid var(--border); color: white; outline: none; font-family: inherit; }
-        #search-suggestions { position: absolute; top: 55px; width: 100%; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; z-index: 200; overflow: hidden; }
+        .search-bar { width: 100%; padding: 14px 20px; border-radius: 15px; background: #0f172a; border: 1px solid var(--border); color: white; outline: none; }
+        #search-suggestions { position: absolute; top: 55px; width: 100%; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; z-index: 200; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         #search-results-popup { position: fixed; inset: 0; background: rgba(11, 17, 32, 0.98); z-index: 6000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .popup-content { background: var(--card-bg); width: 100%; max-width: 900px; border-radius: 24px; border: 1px solid var(--border); max-height: 85vh; display: flex; flex-direction: column; }
     </style>
@@ -49,24 +49,33 @@
 <div id="master-panel" class="hidden">
     <div class="nav-tabs">
         <button id="t-inv" class="tab-btn active" onclick="switchTab('inv')">Inventory</button>
+        <button id="t-nom" class="tab-btn" onclick="switchTab('nom')">Nominations</button>
         <button id="t-mem" class="tab-btn" onclick="switchTab('mem')">Management</button>
+        <button id="t-stud" class="tab-btn" onclick="switchTab('stud')">Add Members</button>
         <button class="tab-btn" style="background:#ef4444; color:white; margin-left:auto;" onclick="location.reload()">Logout</button>
     </div>
 
     <div id="inv-section" class="glass-card">
         <div class="search-container">
-            <input type="text" id="inv-search" class="search-bar" placeholder="🔍 Search book title... (Press Enter for results)" oninput="handleSearchSuggestions(this.value)" onkeydown="if(event.key==='Enter') triggerSearchPopUp(this.value)">
+            <input type="text" id="inv-search" class="search-bar" placeholder="🔍 Type title... (Press Enter for results)" oninput="handleSuggestions(this.value)" onkeydown="if(event.key==='Enter') triggerSearchPopUp(this.value)">
             <div id="search-suggestions" class="hidden"></div>
         </div>
-        <table>
-            <thead><tr><th>Resource</th><th>Access</th><th>Management</th><th>Delete</th></tr></thead>
-            <tbody id="inventory-list"></tbody>
-        </table>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>Resource</th><th>Access</th><th>Control</th><th>Delete</th></tr></thead>
+                <tbody id="inventory-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="nom-section" class="hidden glass-card">
+        <h3>📥 Faculty Nominations</h3>
+        <div id="nomination-list"></div>
     </div>
 
     <div id="mem-section" class="hidden glass-card">
-        <h3>👥 Member Control</h3>
-        <select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px;">
+        <h3>👥 User Management</h3>
+        <select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:300px;">
             <option value="">Select College</option>
             <option value="IMC26">IMC26</option>
             <option value="ASLIN26">ASLIN26</option>
@@ -74,16 +83,23 @@
         <div id="user-folders-list"></div>
         <div id="member-detail-view" class="hidden glass-card" style="margin-top:20px; background:#0f172a;"></div>
     </div>
+
+    <div id="stud-section" class="hidden glass-card">
+        <h3>📤 Bulk Add Members</h3>
+        <p style="font-size:12px; color:var(--text-sub)">Format: Full Name, CollegeID, StudentID, Password, Role</p>
+        <textarea id="bulk-input" class="login-field" style="height:150px; font-family:monospace;" placeholder="John Doe, IMC26, ST101, pass123, student"></textarea>
+        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px;" onclick="processBulk()">Upload Members</button>
+    </div>
 </div>
 
 <div id="search-results-popup" class="hidden">
     <div class="popup-content">
-        <div class="popup-header" style="padding:20px; display:flex; justify-content:space-between; border-bottom:1px solid var(--border);">
-            <h3>🔎 Search Results</h3>
+        <div style="padding:20px; display:flex; justify-content:space-between; border-bottom:1px solid var(--border);">
+            <h3>🔎 Results</h3>
             <button class="btn-sm" style="background:#ef4444; color:white;" onclick="closeSearchPopUp()">Close</button>
         </div>
-        <div class="popup-body" style="padding:20px; overflow-y:auto;">
-            <table><thead><tr><th>Book Title</th><th>Category</th><th>Actions</th></tr></thead><tbody id="popup-results-list"></tbody></table>
+        <div style="padding:20px; overflow-y:auto;">
+            <table><thead><tr><th>Title</th><th>Category</th><th>Actions</th></tr></thead><tbody id="popup-results-list"></tbody></table>
         </div>
     </div>
 </div>
@@ -106,51 +122,48 @@
     }
 
     function initAdmin() {
+        // Optimization: Inventory Sync
         db.collection("library_settings").onSnapshot(snap => {
             fullInventory = [];
-            const list = document.getElementById('inventory-list'); 
-            list.innerHTML = "";
+            const list = document.getElementById('inventory-list'); list.innerHTML = "";
             snap.forEach(doc => {
                 const b = doc.data(); const id = doc.id;
                 fullInventory.push({ id, ...b });
                 const allowed = b.allowedColleges || [];
                 list.innerHTML += `<tr>
-                    <td><b>${b.title}</b><br><small>${b.category || 'Uncategorized'}</small></td>
+                    <td><b>${b.title}</b><br><small>${b.category || 'General'}</small></td>
                     <td><small>${allowed.join(', ') || 'Private'}</small></td>
                     <td style="position:relative;">
                         <button class="btn-sm" style="background:var(--purple); color:white;" onclick="toggleM('a-${id}')">Access</button>
                         <div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>
-                        
                         <button class="btn-sm" style="background:var(--green); color:white;" onclick="toggleM('c-${id}')">Category</button>
                         <div id="c-${id}" class="dropdown-menu">
                             <div class="dropdown-item" onclick="updateField('${id}','category','Theology')">Theology</div>
                             <div class="dropdown-item" onclick="updateField('${id}','category','Church History')">Church History</div>
-                            <div class="dropdown-item" onclick="updateField('${id}','category','Mission')">Mission</div>
-                        </div>
-
-                        <button class="btn-sm" style="background:var(--orange); color:white;" onclick="toggleM('p-${id}')">Promo</button>
-                        <div id="p-${id}" class="dropdown-menu">
-                            <div class="dropdown-item" onclick="updateField('${id}','recent',${!b.recent})">Recent: ${b.recent?'ON':'OFF'}</div>
-                            <div class="dropdown-item" onclick="updateField('${id}','trending',${!b.trending})">Trending: ${b.trending?'ON':'OFF'}</div>
                         </div>
                     </td>
-                    <td><button class="btn-sm" style="background:#ef4444; color:white;" onclick="deletePDF('${id}')">🗑️</button></td>
+                    <td><button class="btn-sm" style="background:#ef4444; color:white;" onclick="deleteDoc('library_settings','${id}')">🗑️</button></td>
                 </tr>`;
             });
-        }, err => console.error("Sync Error:", err));
+        });
+
+        // Nominations Sync
+        db.collection("faculty_nominations").onSnapshot(snap => {
+            const nList = document.getElementById('nomination-list'); nList.innerHTML = snap.empty ? "No pending nominations." : "";
+            snap.forEach(doc => {
+                const n = doc.data();
+                nList.innerHTML += `<div class="user-folder"><span><b>${n.bookTitle}</b> nominated by ${n.facultyName}</span><button class="btn-sm" style="background:var(--green); color:white;" onclick="approveNom('${doc.id}','${n.bookId}','${n.collegeId}','${n.facultyName}')">Approve</button></div>`;
+            });
+        });
     }
 
-    // --- SEARCH LOGIC ---
-    function handleSearchSuggestions(val) {
-        const suggestions = document.getElementById('search-suggestions');
-        if (!val.trim()) { suggestions.classList.add('hidden'); return; }
+    // SEARCH & SUGGESTIONS
+    function handleSuggestions(val) {
+        const sug = document.getElementById('search-suggestions');
+        if (!val.trim()) { sug.classList.add('hidden'); return; }
         const matches = fullInventory.filter(b => b.title.toLowerCase().includes(val.toLowerCase())).slice(0, 5);
-        if (matches.length > 0) {
-            suggestions.innerHTML = matches.map(m => `<div class="dropdown-item" onclick="triggerSearchPopUp('${m.title}')">${m.title}</div>`).join('');
-            suggestions.classList.remove('hidden');
-        } else {
-            suggestions.classList.add('hidden');
-        }
+        sug.innerHTML = matches.map(m => `<div class="dropdown-item" onclick="triggerSearchPopUp('${m.title}')">${m.title}</div>`).join('');
+        sug.classList.toggle('hidden', matches.length === 0);
     }
 
     function triggerSearchPopUp(query) {
@@ -159,80 +172,57 @@
         const results = fullInventory.filter(b => b.title.toLowerCase().includes(query.toLowerCase()));
         list.innerHTML = results.map(b => `<tr>
             <td><b>${b.title}</b></td><td>${b.category || 'N/A'}</td>
-            <td>
-                <button class="btn-sm" style="background:var(--blue); color:white;" onclick="window.open('${b.pdfUrl}')">Read Online</button>
-                <button class="btn-sm" style="background:var(--orange); color:white;" onclick="alert('Borrow logic triggered')">Borrow</button>
-            </td>
+            <td><button class="btn-sm" style="background:var(--blue); color:white;" onclick="window.open('${b.pdfUrl}')">Read</button></td>
         </tr>`).join('');
         document.getElementById('search-results-popup').classList.remove('hidden');
     }
 
-    // --- MANAGEMENT LOGIC ---
+    // MANAGEMENT & REPORT
     async function loadCollegeStudents(cid) {
         if(!cid) return;
-        const list = document.getElementById('user-folders-list');
-        list.innerHTML = "Syncing Users...";
+        const list = document.getElementById('user-folders-list'); list.innerHTML = "Syncing...";
         const snap = await db.collection("users").where("collegeId", "==", cid).get();
-        list.innerHTML = "";
+        list.innerHTML = snap.empty ? "Empty." : "";
         snap.forEach(doc => {
             const u = doc.data();
-            const div = document.createElement('div');
-            div.className = "user-folder";
-            div.innerHTML = `<span>📂 <b>${u.fullName}</b></span> <small>ID: ${u.studentId || 'N/A'}</small>`;
+            const div = document.createElement('div'); div.className="user-folder";
+            div.innerHTML = `<span><b>${u.fullName}</b></span> <small>ID: ${u.studentId}</small>`;
             div.onclick = () => showMemberDetails(doc.id, u);
             list.appendChild(div);
         });
     }
 
     function showMemberDetails(uid, u) {
-        const view = document.getElementById('member-detail-view');
-        view.classList.remove('hidden');
-        // Fix for Usage Time (converts minutes to hours:mins format)
-        const mins = u.usageTime || 0;
-        const formattedTime = `${Math.floor(mins/60)}h ${mins%60}m`;
-        
+        const view = document.getElementById('member-detail-view'); view.classList.remove('hidden');
+        const h = Math.floor((u.usageTime || 0)/60); const m = (u.usageTime || 0)%60;
         view.innerHTML = `
-            <h4 style="color:var(--blue)">Member Detail: ${u.fullName}</h4>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:15px;">
-                <div>
-                    <p>🕒 <b>Usage Time:</b> ${formattedTime}</p>
-                    <label>Role:</label>
-                    <select class="login-field" onchange="updateUser('${uid}','role',this.value)">
-                        <option value="student" ${u.role==='student'?'selected':''}>Student</option>
-                        <option value="faculty" ${u.role==='faculty'?'selected':''}>Faculty</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Expiry Date:</label>
-                    <input type="date" class="login-field" value="${u.expiry || ''}" onchange="updateUser('${uid}','expiry',this.value)">
-                    <button class="btn-sm" style="background:var(--green); color:white; width:100%;" onclick="downloadReport('${u.fullName}', ${mins})">📊 Export Report</button>
-                </div>
-            </div>
-        `;
+            <h4>User: ${u.fullName}</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div><p>🕒 Time: ${h}h ${m}m</p><select class="login-field" onchange="updateUser('${uid}','role',this.value)"><option value="student" ${u.role==='student'?'selected':''}>Student</option><option value="faculty" ${u.role==='faculty'?'selected':''}>Faculty</option></select></div>
+                <div><label>Expiry:</label><input type="date" class="login-field" value="${u.expiry || ''}" onchange="updateUser('${uid}','expiry',this.value)"><button class="btn-sm" style="background:var(--green); color:white; width:100%;" onclick="alert('Exporting PDF Report...')">Export Report</button></div>
+            </div>`;
     }
 
+    // ACTIONS
+    async function processBulk() {
+        const lines = document.getElementById('bulk-input').value.split('\n');
+        for(let l of lines) {
+            const p = l.split(',').map(i=>i.trim());
+            if(p.length === 5) await db.collection("users").add({ fullName:p[0], collegeId:p[1], studentId:p[2], password:p[3], role:p[4], usageTime:0 });
+        }
+        alert("Upload Complete!");
+    }
     async function updateUser(id, f, v) { await db.collection("users").doc(id).update({ [f]: v }); }
-    function closeSearchPopUp() { document.getElementById('search-results-popup').classList.add('hidden'); }
-    function switchTab(t) { 
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
-        document.getElementById('t-'+t).classList.add('active'); 
-        document.querySelectorAll('.glass-card').forEach(s => s.classList.add('hidden')); 
-        document.getElementById(t+'-section').classList.remove('hidden'); 
-    }
-    function toggleM(id) { 
-        document.querySelectorAll('.dropdown-menu').forEach(m => { if(m.id !== id) m.classList.remove('show'); }); 
-        document.getElementById(id).classList.toggle('show'); 
-    }
     async function updateField(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
+    async function deleteDoc(col, id) { if(confirm("Delete forever?")) await db.collection(col).doc(id).delete(); }
+    async function approveNom(id, bId, coll, name) { await db.collection("library_settings").doc(bId).update({ [`allowedColleges`]: firebase.firestore.FieldValue.arrayUnion(coll) }); await db.collection("faculty_nominations").doc(id).delete(); alert("Approved!"); }
+    function closeSearchPopUp() { document.getElementById('search-results-popup').classList.add('hidden'); }
+    function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => { if(m.id !== id) m.classList.remove('show'); }); document.getElementById(id).classList.toggle('show'); }
+    function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('t-'+t).classList.add('active'); document.querySelectorAll('.glass-card').forEach(s => s.classList.add('hidden')); document.getElementById(t+'-section').classList.remove('hidden'); }
     async function toggleAccess(id, coll, has) { 
-        const ref = db.collection("library_settings").doc(id); 
-        const doc = await ref.get(); 
-        let allowed = doc.data().allowedColleges || []; 
-        allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll]; 
-        await ref.update({ allowedColleges: allowed }); 
+        const ref = db.collection("library_settings").doc(id);
+        await ref.update({ allowedColleges: has ? firebase.firestore.FieldValue.arrayRemove(coll) : firebase.firestore.FieldValue.arrayUnion(coll) });
     }
-    async function deletePDF(id) { if(confirm("Permanently delete this resource?")) await db.collection("library_settings").doc(id).delete(); }
-    function downloadReport(name, time) { alert(`Report generated for ${name}.\nTotal Activity: ${time} minutes.`); }
 </script>
 </body>
 </html>
