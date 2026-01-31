@@ -9,217 +9,95 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --blue: #3b82f6; --orange: #f97316; --green: #10b981; --purple: #a855f7;
-            --bg: #0b1120; --card-bg: #1e293b; --text-main: #f8fafc; --text-sub: #94a3b8;
-            --border: #334155;
-        }
+        :root { --blue: #3b82f6; --orange: #f97316; --green: #10b981; --purple: #a855f7; --bg: #0b1120; --card-bg: #1e293b; --text-main: #f8fafc; --text-sub: #94a3b8; --border: #334155; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
-        
         #auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: var(--card-bg); padding: 30px; border-radius: 24px; width: 100%; max-width: 350px; text-align: center; border: 1px solid var(--border); }
-        .login-field, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; margin-bottom: 15px; outline: none; box-sizing: border-box; font-family: inherit; }
-
-        .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; }
-        .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: var(--card-bg); color: var(--text-sub); border: 1px solid var(--border); transition: 0.3s; white-space: nowrap; }
-        .tab-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
-
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; }
+        .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; background: var(--card-bg); color: var(--text-sub); border: 1px solid var(--border); }
+        .tab-btn.active { background: var(--blue); color: white; }
         .glass-card { background: var(--card-bg); border-radius: 20px; padding: 25px; border: 1px solid var(--border); margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; padding: 12px; color: var(--text-sub); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-        td { padding: 15px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
-        
-        .btn-sm { padding: 8px 15px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; }
-        .dropdown-menu { display: none; position: absolute; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 100; min-width: 180px; padding: 10px; top: 40px; }
-        .show { display: block; }
-        .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; color: var(--text-main); }
-        .dropdown-item:hover { background: var(--blue); }
-
-        .user-folder { background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-box { background: #0f172a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
-        .stat-val { font-size: 18px; font-weight: 800; color: var(--blue); display: block; }
-
-        #user-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 6000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .modal-content { background: var(--card-bg); width: 100%; max-width: 650px; border-radius: 24px; padding: 30px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        .btn-sm { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 11px; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
-
-<div id="auth-overlay">
-    <div class="login-card">
-        <h2 style="color:var(--blue); margin-bottom:20px;">TheoLib Admin</h2>
-        <input type="text" id="admin-coll-id" class="login-field" placeholder="College ID">
-        <input type="password" id="admin-pass" class="login-field" placeholder="Password">
-        <button id="admin-login-btn" class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px;" onclick="handleAdminLogin()">Login to Master Panel</button>
-        <p id="admin-status" style="color:#ef4444; font-size:11px; margin-top:10px; font-weight:600;"></p>
-    </div>
-</div>
-
-<div id="master-panel" class="hidden">
-    <div class="nav-tabs">
-        <button id="t-inv" class="tab-btn active" onclick="switchTab('inv')">Inventory</button>
-        <button id="t-mem" class="tab-btn" onclick="switchTab('mem')">Monitoring</button>
-        <button id="t-rec" class="tab-btn" onclick="switchTab('rec')">Recommendations</button>
-        <button id="t-mis" class="tab-btn" onclick="switchTab('mis')">Mission Focus</button>
-        <button id="t-stud" class="tab-btn" onclick="switchTab('stud')">Members</button>
-        <button class="tab-btn" style="background:#ef4444; color:white; margin-left:auto;" onclick="location.reload()">Logout</button>
-    </div>
-
-    <div id="inv-section" class="glass-card">
-        <div id="super-admin-reg" class="hidden" style="margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
-            <h3 style="margin:0 0 15px; color:var(--blue);">🔗 Register GitHub PDF</h3>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="reg-file-id" class="login-field" placeholder="File ID (Exact name)">
-                <input type="text" id="reg-file-title" class="login-field" placeholder="Display Title">
-                <button class="btn-sm" style="background:var(--blue); color:white; height:45px;" onclick="registerBook()">Register</button>
-            </div>
-        </div>
-        <table><thead><tr><th>Resource</th><th>Access</th><th>Manage</th><th>Mission</th><th>Actions</th></tr></thead><tbody id="inventory-list"></tbody></table>
-    </div>
-
-    <div id="rec-section" class="hidden glass-card">
-        <h2 style="margin-top:0;">⭐ Faculty Suggestions</h2>
-        <div style="max-width:400px; display:grid; gap:15px;">
-            <select id="rec-coll" class="login-field" onchange="fetchFaculty(this.value)"><option value="">Select College</option><option value="IMC26">IMC26</option><option value="ASLIN26">ASLIN26</option></select>
-            <select id="rec-faculty" class="login-field"><option value="">Choose Faculty</option></select>
-            <select id="rec-book" class="login-field"><option value="">Select Book</option></select>
-            <button class="btn-sm" style="background:var(--orange); color:white; padding:15px;" onclick="saveRecommendation()">Set Recommendation</button>
+    <div id="auth-overlay">
+        <div class="login-card">
+            <h2 style="color:var(--blue)">Admin Login</h2>
+            <input type="text" id="admin-coll-id" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px;" placeholder="College ID">
+            <input type="password" id="admin-pass" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px;" placeholder="Password">
+            <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px;" onclick="handleAdminLogin()">Login</button>
         </div>
     </div>
 
-    <div id="mis-section" class="hidden glass-card">
-        <h2 style="margin-top:0; color:var(--green);">🌍 Mission Focus</h2>
-        <div style="max-width:400px; display:grid; gap:15px;">
-            <select id="mis-book" class="login-field"><option value="">Select Book for Mission Focus</option></select>
-            <button class="btn-sm" style="background:var(--green); color:white; padding:15px;" onclick="setMissionFocus()">Add to Mission Focus</button>
+    <div id="master-panel" class="hidden">
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('inv')">Inventory</button>
+            <button class="tab-btn" onclick="switchTab('nom')">Faculty Nominations</button>
+            <button class="tab-btn" onclick="switchTab('mem')">Monitoring</button>
+            <button class="tab-btn" onclick="location.reload()">Logout</button>
         </div>
-        <div id="active-mission-list" style="margin-top:20px; font-size:13px; color:var(--text-sub);"></div>
+
+        <div id="inv-section" class="glass-card">
+            <table><thead><tr><th>Book</th><th>Access</th><th>Mission</th></tr></thead><tbody id="inventory-list"></tbody></table>
+        </div>
+
+        <div id="nom-section" class="hidden glass-card">
+            <h2>📥 Pending Nominations</h2>
+            <div id="nomination-list"></div>
+        </div>
+
+        <div id="mem-section" class="hidden glass-card">
+            <h2>👥 Member Monitoring</h2>
+            <select id="mon-coll" onchange="loadCollegeStudents(this.value)" style="padding:10px; margin-bottom:20px;"><option value="">Select College</option><option value="IMC26">IMC26</option></select>
+            <div id="user-folders-list"></div>
+        </div>
     </div>
 
-    <div id="mem-section" class="hidden glass-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2>👥 Member Activity</h2>
-            <select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px; margin:0;"><option value="">Select College</option><option value="IMC26">IMC26</option><option value="ASLIN26">ASLIN26</option></select>
-        </div>
-        <div id="user-folders-list"></div>
-    </div>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const adminAccounts = { "aslin": "Phlagon@28", "IMC26": "IMC26@theo" };
 
-    <div id="stud-section" class="hidden glass-card">
-        <h2>📤 Member Registration</h2>
-        <p style="font-size:11px; color:var(--text-sub);">Format: Name, CollegeID, ID, Password, Role(student/faculty)</p>
-        <textarea id="bulk-input" class="login-field" style="height:150px;" placeholder="John Doe, IMC26, ST101, pass123, student"></textarea>
-        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px;" onclick="processBulk()">Register Members</button>
-    </div>
-</div>
+        function handleAdminLogin() {
+            const cid = document.getElementById('admin-coll-id').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
+            if (adminAccounts[cid] === pass) {
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('master-panel').classList.remove('hidden');
+                initAdmin();
+            }
+        }
 
-<div id="user-modal" class="hidden">
-    <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 id="modal-title">Report</h3>
-            <div style="display:flex; gap:10px;"><button onclick="downloadReport()" class="btn-sm" style="background:var(--blue); color:white;">Export CSV</button><button onclick="document.getElementById('user-modal').classList.add('hidden')" class="btn-sm" style="background:#ef4444; color:white;">Close</button></div>
-        </div>
-        <div id="modal-body"></div>
-        <div style="margin-top:20px; padding:15px; background:#0f172a; border-radius:12px; border:1px solid var(--border);">
-            <label style="font-size:11px; color:var(--text-sub);">UPDATE POSITION/ROLE</label>
-            <div style="display:flex; gap:10px; margin-top:10px;"><select id="role-select" class="login-field" style="margin:0;"><option value="student">Student</option><option value="faculty">Faculty</option></select><button onclick="updateUserRole()" class="btn-sm" style="background:var(--green); color:white;">Save</button></div>
-        </div>
-        <table style="margin-top:20px;"><thead><tr><th>Date</th><th>Activity</th><th>Duration</th></tr></thead><tbody id="log-body"></tbody></table>
-    </div>
-</div>
-
-<script>
-    const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const adminAccounts = { "IMC26": "IMC26@theo", "ASLIN26": "ASL@theo", "aslin": "Phlagon@28" };
-    let currentAdminID = ""; let isSuperAdmin = false; let activeUserUID = ""; let reportData = null;
-
-    function handleAdminLogin() {
-        const cid = document.getElementById('admin-coll-id').value.trim();
-        const pass = document.getElementById('admin-pass').value.trim();
-        if (adminAccounts[cid] && adminAccounts[cid] === pass) {
-            currentAdminID = cid; isSuperAdmin = (cid === "aslin");
-            document.getElementById('auth-overlay').classList.add('hidden');
-            document.getElementById('master-panel').classList.remove('hidden');
-            if(isSuperAdmin) document.getElementById('super-admin-reg').classList.remove('hidden');
-            initAdmin();
-        } else { document.getElementById('admin-status').innerText = "Access Denied"; }
-    }
-
-    function initAdmin() {
-        db.collection("library_settings").onSnapshot(snap => {
-            const list = document.getElementById('inventory-list');
-            const misSel = document.getElementById('mis-book');
-            const activeMis = document.getElementById('active-mission-list');
-            list.innerHTML = ""; misSel.innerHTML = '<option value="">Select Book</option>'; activeMis.innerHTML = "<b>Active Mission Focus:</b><br>";
-            
-            snap.forEach(doc => {
-                const b = doc.data(); const id = doc.id; const allowed = b.allowedColleges || [];
-                list.innerHTML += `<tr><td><b>${b.title}</b><br><small>${b.category}</small></td>
-                    <td><small>${allowed.join(', ') || '🔒'}</small></td>
-                    <td style="position:relative;">
-                        ${isSuperAdmin ? `<button class="btn-sm" style="background:var(--purple); color:white;" onclick="toggleM('a-${id}')">🔓 Access</button>` : ''}
-                        <div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>
-                        <button class="btn-sm" style="background:var(--green); color:white;" onclick="toggleM('c-${id}')">📁 Category</button>
-                        <div id="c-${id}" class="dropdown-menu">${["Theology", "History", "Mission", "Acts", "Gospel", "Bible"].map(c => `<div class="dropdown-item" onclick="updateField('${id}','category','${c}')">${c}</div>`).join('')}</div>
-                    </td><td><button class="btn-sm" style="background:${b.mission ? 'var(--green)' : 'var(--bg)'}; border:1px solid var(--border);" onclick="updateField('${id}','mission',${!b.mission})">🌍</button></td>
-                    <td>${isSuperAdmin ? `<button class="btn-sm" style="background:#ef4444; color:white;" onclick="deletePDF('${id}')">🗑️</button>` : '-'}</td></tr>`;
-                
-                misSel.innerHTML += `<option value="${id}">${b.title}</option>`;
-                if(b.mission) activeMis.innerHTML += `<div>✅ ${b.title}</div>`;
+        function initAdmin() {
+            db.collection("library_settings").onSnapshot(snap => {
+                const list = document.getElementById('inventory-list'); list.innerHTML = "";
+                snap.forEach(doc => {
+                    const b = doc.data();
+                    list.innerHTML += `<tr><td>${b.title}</td><td>${b.allowedColleges}</td><td><button onclick="db.collection('library_settings').doc('${doc.id}').update({mission:${!b.mission}})">${b.mission?'On':'Off'}</button></td></tr>`;
+                });
             });
-        });
-    }
 
-    async function saveRecommendation() {
-        const cid = document.getElementById('rec-coll').value;
-        const faculty = document.getElementById('rec-faculty').value;
-        const bookId = document.getElementById('rec-book').value;
-        await db.collection("library_settings").doc(bookId).set({ recommendations: { [cid]: faculty } }, { merge: true });
-        alert("Recommendation Added!");
-    }
+            db.collection("faculty_nominations").where("status","==","pending").onSnapshot(snap => {
+                const list = document.getElementById('nomination-list'); list.innerHTML = "";
+                snap.forEach(doc => {
+                    const n = doc.data();
+                    list.innerHTML += `<div><b>${n.bookTitle}</b> (From: ${n.facultyName}) <button onclick="approveNom('${doc.id}','${n.bookId}','${n.collegeId}','${n.facultyName}')">Approve</button></div>`;
+                });
+            });
+        }
 
-    async function fetchFaculty(cid) {
-        if(!cid) return;
-        const fSnap = await db.collection("users").where("collegeId","==",cid).where("role","==","faculty").get();
-        const fSel = document.getElementById('rec-faculty'); fSel.innerHTML = '<option value="">Choose Faculty</option>';
-        fSnap.forEach(doc => fSel.innerHTML += `<option value="${doc.data().fullName}">${doc.data().fullName}</option>`);
-        const bSnap = await db.collection("library_settings").get();
-        const bSel = document.getElementById('rec-book'); bSel.innerHTML = '<option value="">Select Book</option>';
-        bSnap.forEach(doc => bSel.innerHTML += `<option value="${doc.id}">${doc.data().title}</option>`);
-    }
+        async function approveNom(docId, bookId, collegeId, facultyName) {
+            await db.collection("library_settings").doc(bookId).set({ recommendations: { [collegeId]: facultyName } }, { merge: true });
+            await db.collection("faculty_nominations").doc(docId).delete();
+            alert("Live!");
+        }
 
-    function loadCollegeStudents(cid) {
-        if(!cid) return;
-        db.collection("users").where("collegeId", "==", cid).onSnapshot(snap => {
-            const list = document.getElementById('user-folders-list'); list.innerHTML = "";
-            snap.forEach(doc => { const u = doc.data(); list.innerHTML += `<div class="user-folder" onclick='openReport("${doc.id}", ${JSON.stringify(u)})'><span>📂 <b>${u.fullName}</b></span><small style="color:var(--blue)">${u.role || 'student'}</small></div>`; });
-        });
-    }
-
-    async function openReport(uid, user) {
-        activeUserUID = uid; document.getElementById('user-modal').classList.remove('hidden'); document.getElementById('modal-title').innerText = user.fullName;
-        document.getElementById('role-select').value = user.role || "student";
-        const logs = await db.collection("activity_logs").where("userId", "==", uid).orderBy("timestamp", "desc").get();
-        reportData = { user, logs: [] }; let totalSecs = 0; let logHtml = "";
-        logs.forEach(l => { const d = l.data(); const dur = parseInt(d.duration) || 0; totalSecs += dur; logHtml += `<tr><td>${new Date(d.timestamp).toLocaleDateString()}</td><td>${d.activityType}</td><td>${d.duration}</td></tr>`; reportData.logs.push(d); });
-        const fmt = (s) => `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s`;
-        document.getElementById('modal-body').innerHTML = `<div class="stat-grid"><div class="stat-box"><span style="font-size:10px; color:var(--text-sub);">TIME USAGE</span><span class="stat-val">${fmt(totalSecs)}</span></div><div class="stat-box"><span style="font-size:10px; color:var(--text-sub);">ID</span><span class="stat-val" style="font-size:14px;">${user.studentId}</span></div></div>`;
-        document.getElementById('log-body').innerHTML = logHtml;
-    }
-
-    async function setMissionFocus() { const id = document.getElementById('mis-book').value; if(id) await updateField(id, 'mission', true); alert("Added to Mission Focus!"); }
-    async function updateUserRole() { await db.collection("users").doc(activeUserUID).update({ role: document.getElementById('role-select').value }); alert("Role Updated!"); }
-    async function registerBook() { const id = document.getElementById('reg-file-id').value.trim(); const title = document.getElementById('reg-file-title').value.trim(); if(!id || !title) return; await db.collection("library_settings").doc(id).set({ title, category: "Theology", allowedColleges: [], recent: false, trending: false, updatedAt: new Date().toISOString() }); alert("Registered!"); }
-    function downloadReport() { if(!reportData) return; let csv = "Date,Activity,Duration\n"; reportData.logs.forEach(l => csv += `${new Date(l.timestamp).toLocaleString()},"${l.activityType}",${l.duration}\n`); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); link.download = `Report_${reportData.user.fullName}.csv`; link.click(); }
-    async function processBulk() { const lines = document.getElementById('bulk-input').value.split('\n'); for(let l of lines) { const p = l.split(',').map(i=>i.trim()); if(p.length===5) await db.collection("users").add({ fullName:p[0], collegeId:p[1], studentId:p[2], password:p[3], role:p[4].toLowerCase(), createdAt: new Date().toISOString() }); } alert("Bulk Done!"); }
-    function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => m.id !== id ? m.classList.remove('show') : null); document.getElementById(id).classList.toggle('show'); }
-    function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === `t-${t}`)); document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', s.id !== `${t}-section`)); }
-    async function toggleAccess(id, coll, has) { const ref = db.collection("library_settings").doc(id); const doc = await ref.get(); let allowed = doc.data().allowedColleges || []; allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll]; await ref.update({ allowedColleges: allowed }); }
-    async function updateField(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
-    async function deletePDF(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
-</script>
+        function switchTab(t) { document.querySelectorAll('.glass-card').forEach(s => s.classList.add('hidden')); document.getElementById(t + '-section').classList.remove('hidden'); }
+    </script>
 </body>
 </html>
