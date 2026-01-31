@@ -27,7 +27,7 @@
         .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; }
         .dropdown-item:hover { background: var(--blue); color: white; }
         .hidden { display: none !important; }
-        .user-folder { background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid var(--border); }
+        .user-folder { background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid var(--border); display: flex; justify-content: space-between; }
         .search-container { position: relative; margin-bottom: 20px; }
         .search-bar { width: 100%; padding: 14px 20px; border-radius: 15px; background: #0f172a; border: 1px solid var(--border); color: white; outline: none; font-family: inherit; }
         #search-suggestions { position: absolute; top: 55px; width: 100%; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; z-index: 200; overflow: hidden; }
@@ -55,7 +55,7 @@
 
     <div id="inv-section" class="glass-card">
         <div class="search-container">
-            <input type="text" id="inv-search" class="search-bar" placeholder="🔍 Search book title... (Press Enter for results)" oninput="handleSearchInput(this.value)" onkeydown="if(event.key==='Enter') triggerSearchPopUp(this.value)">
+            <input type="text" id="inv-search" class="search-bar" placeholder="🔍 Search book title... (Press Enter for results)" oninput="handleSearchSuggestions(this.value)" onkeydown="if(event.key==='Enter') triggerSearchPopUp(this.value)">
             <div id="search-suggestions" class="hidden"></div>
         </div>
         <table>
@@ -90,7 +90,8 @@
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
-    firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
+    firebase.initializeApp(firebaseConfig); 
+    const db = firebase.firestore();
     const adminAccounts = { "aslin": "Phlagon@28", "IMC26": "IMC26@theo", "ASLIN26": "ASL@theo" };
     let fullInventory = [];
 
@@ -101,20 +102,21 @@
             document.getElementById('auth-overlay').classList.add('hidden');
             document.getElementById('master-panel').classList.remove('hidden');
             initAdmin();
-        } else { alert("Denied"); }
+        } else { alert("Access Denied"); }
     }
 
     function initAdmin() {
         db.collection("library_settings").onSnapshot(snap => {
             fullInventory = [];
-            const list = document.getElementById('inventory-list'); list.innerHTML = "";
+            const list = document.getElementById('inventory-list'); 
+            list.innerHTML = "";
             snap.forEach(doc => {
                 const b = doc.data(); const id = doc.id;
                 fullInventory.push({ id, ...b });
                 const allowed = b.allowedColleges || [];
                 list.innerHTML += `<tr>
-                    <td><b>${b.title}</b><br><small>${b.category || 'No Category'}</small></td>
-                    <td><small>${allowed.join(', ')}</small></td>
+                    <td><b>${b.title}</b><br><small>${b.category || 'Uncategorized'}</small></td>
+                    <td><small>${allowed.join(', ') || 'Private'}</small></td>
                     <td style="position:relative;">
                         <button class="btn-sm" style="background:var(--purple); color:white;" onclick="toggleM('a-${id}')">Access</button>
                         <div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>
@@ -135,16 +137,20 @@
                     <td><button class="btn-sm" style="background:#ef4444; color:white;" onclick="deletePDF('${id}')">🗑️</button></td>
                 </tr>`;
             });
-        });
+        }, err => console.error("Sync Error:", err));
     }
 
     // --- SEARCH LOGIC ---
-    function handleSearchInput(val) {
+    function handleSearchSuggestions(val) {
         const suggestions = document.getElementById('search-suggestions');
         if (!val.trim()) { suggestions.classList.add('hidden'); return; }
         const matches = fullInventory.filter(b => b.title.toLowerCase().includes(val.toLowerCase())).slice(0, 5);
-        suggestions.innerHTML = matches.map(m => `<div class="dropdown-item" onclick="triggerSearchPopUp('${m.title}')">${m.title}</div>`).join('');
-        suggestions.classList.toggle('hidden', matches.length === 0);
+        if (matches.length > 0) {
+            suggestions.innerHTML = matches.map(m => `<div class="dropdown-item" onclick="triggerSearchPopUp('${m.title}')">${m.title}</div>`).join('');
+            suggestions.classList.remove('hidden');
+        } else {
+            suggestions.classList.add('hidden');
+        }
     }
 
     function triggerSearchPopUp(query) {
@@ -155,7 +161,7 @@
             <td><b>${b.title}</b></td><td>${b.category || 'N/A'}</td>
             <td>
                 <button class="btn-sm" style="background:var(--blue); color:white;" onclick="window.open('${b.pdfUrl}')">Read Online</button>
-                <button class="btn-sm" style="background:var(--orange); color:white;">Borrow</button>
+                <button class="btn-sm" style="background:var(--orange); color:white;" onclick="alert('Borrow logic triggered')">Borrow</button>
             </td>
         </tr>`).join('');
         document.getElementById('search-results-popup').classList.remove('hidden');
@@ -165,14 +171,14 @@
     async function loadCollegeStudents(cid) {
         if(!cid) return;
         const list = document.getElementById('user-folders-list');
-        list.innerHTML = "Loading...";
+        list.innerHTML = "Syncing Users...";
         const snap = await db.collection("users").where("collegeId", "==", cid).get();
         list.innerHTML = "";
         snap.forEach(doc => {
             const u = doc.data();
             const div = document.createElement('div');
             div.className = "user-folder";
-            div.innerHTML = `<span>📂 <b>${u.fullName}</b> (${u.studentId})</span>`;
+            div.innerHTML = `<span>📂 <b>${u.fullName}</b></span> <small>ID: ${u.studentId || 'N/A'}</small>`;
             div.onclick = () => showMemberDetails(doc.id, u);
             list.appendChild(div);
         });
@@ -181,28 +187,52 @@
     function showMemberDetails(uid, u) {
         const view = document.getElementById('member-detail-view');
         view.classList.remove('hidden');
+        // Fix for Usage Time (converts minutes to hours:mins format)
+        const mins = u.usageTime || 0;
+        const formattedTime = `${Math.floor(mins/60)}h ${mins%60}m`;
+        
         view.innerHTML = `
-            <h4>User: ${u.fullName}</h4>
-            <p>🕒 <b>Usage Time:</b> ${u.usageTime || '0'} mins</p>
-            <label>Assign Role:</label>
-            <select class="login-field" onchange="updateUser('${uid}','role',this.value)">
-                <option value="student" ${u.role==='student'?'selected':''}>Student</option>
-                <option value="faculty" ${u.role==='faculty'?'selected':''}>Faculty</option>
-            </select>
-            <label>Expiry Date:</label>
-            <input type="date" class="login-field" value="${u.expiry || ''}" onchange="updateUser('${uid}','expiry',this.value)">
-            <button class="btn-sm" style="background:var(--green); color:white;" onclick="downloadReport('${u.fullName}')">📊 Download Report</button>
+            <h4 style="color:var(--blue)">Member Detail: ${u.fullName}</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:15px;">
+                <div>
+                    <p>🕒 <b>Usage Time:</b> ${formattedTime}</p>
+                    <label>Role:</label>
+                    <select class="login-field" onchange="updateUser('${uid}','role',this.value)">
+                        <option value="student" ${u.role==='student'?'selected':''}>Student</option>
+                        <option value="faculty" ${u.role==='faculty'?'selected':''}>Faculty</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Expiry Date:</label>
+                    <input type="date" class="login-field" value="${u.expiry || ''}" onchange="updateUser('${uid}','expiry',this.value)">
+                    <button class="btn-sm" style="background:var(--green); color:white; width:100%;" onclick="downloadReport('${u.fullName}', ${mins})">📊 Export Report</button>
+                </div>
+            </div>
         `;
     }
 
-    async function updateUser(id, f, v) { await db.collection("users").doc(id).update({ [f]: v }); alert("Updated!"); }
+    async function updateUser(id, f, v) { await db.collection("users").doc(id).update({ [f]: v }); }
     function closeSearchPopUp() { document.getElementById('search-results-popup').classList.add('hidden'); }
-    function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('t-'+t).classList.add('active'); document.querySelectorAll('.glass-card').forEach(s => s.classList.add('hidden')); document.getElementById(t+'-section').classList.remove('hidden'); }
-    function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => { if(m.id !== id) m.classList.remove('show'); }); document.getElementById(id).classList.toggle('show'); }
+    function switchTab(t) { 
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
+        document.getElementById('t-'+t).classList.add('active'); 
+        document.querySelectorAll('.glass-card').forEach(s => s.classList.add('hidden')); 
+        document.getElementById(t+'-section').classList.remove('hidden'); 
+    }
+    function toggleM(id) { 
+        document.querySelectorAll('.dropdown-menu').forEach(m => { if(m.id !== id) m.classList.remove('show'); }); 
+        document.getElementById(id).classList.toggle('show'); 
+    }
     async function updateField(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
-    async function toggleAccess(id, coll, has) { const ref = db.collection("library_settings").doc(id); const doc = await ref.get(); let allowed = doc.data().allowedColleges || []; allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll]; await ref.update({ allowedColleges: allowed }); }
-    async function deletePDF(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
-    function downloadReport(name) { alert("Generating report for " + name + "..."); }
+    async function toggleAccess(id, coll, has) { 
+        const ref = db.collection("library_settings").doc(id); 
+        const doc = await ref.get(); 
+        let allowed = doc.data().allowedColleges || []; 
+        allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll]; 
+        await ref.update({ allowedColleges: allowed }); 
+    }
+    async function deletePDF(id) { if(confirm("Permanently delete this resource?")) await db.collection("library_settings").doc(id).delete(); }
+    function downloadReport(name, time) { alert(`Report generated for ${name}.\nTotal Activity: ${time} minutes.`); }
 </script>
 </body>
 </html>
