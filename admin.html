@@ -27,6 +27,7 @@
         .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; }
         .dropdown-item:hover { background: var(--blue); color: white; }
         .hidden { display: none !important; }
+        .user-folder { background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         
         /* Search Components */
         .search-container { position: relative; margin-bottom: 20px; }
@@ -55,58 +56,55 @@
     <div class="nav-tabs">
         <button id="t-inv" class="tab-btn active" onclick="switchTab('inv')">Inventory</button>
         <button id="t-nom" class="tab-btn" onclick="switchTab('nom')">Nominations</button>
-        <button id="t-mem" class="tab-btn" onclick="switchTab('mem')">Monitoring</button>
+        <button id="t-mem" class="tab-btn" onclick="switchTab('mem')">Management</button>
         <button id="t-stud" class="tab-btn" onclick="switchTab('stud')">Members</button>
         <button class="tab-btn" style="background:#ef4444; color:white; margin-left:auto;" onclick="location.reload()">Logout</button>
     </div>
 
     <div id="inv-section" class="glass-card">
         <div class="search-container">
-            <input type="text" id="inv-search" class="search-bar" placeholder="🔍 Search book title... (Press Enter for full results)" 
+            <input type="text" id="inv-search" class="search-bar" placeholder="🔍 Search book title... (Press Enter for results)" 
                 oninput="handleSearchInput(this.value)" 
                 onkeydown="if(event.key==='Enter') triggerSearchPopUp(this.value)">
             <div id="search-suggestions" class="hidden"></div>
         </div>
 
-        <div id="super-admin-reg" class="hidden" style="margin-bottom:20px; display:flex; gap:10px;">
-            <input type="text" id="reg-file-id" class="login-field" style="margin:0; flex:1;" placeholder="File ID">
-            <input type="text" id="reg-file-title" class="login-field" style="margin:0; flex:1;" placeholder="Title">
-            <button onclick="registerBook()" class="btn-sm" style="background:var(--blue); color:white; padding:0 25px;">Register</button>
-        </div>
-        
         <table>
             <thead><tr><th>Resource</th><th>Access</th><th>Management</th><th>Delete</th></tr></thead>
             <tbody id="inventory-list"></tbody>
         </table>
     </div>
 
-    <div id="nom-section" class="hidden glass-card"><h2>📥 Faculty Nominations</h2><div id="nomination-list"></div></div>
+    <div id="nom-section" class="hidden glass-card"><h2>📥 Nominations</h2><div id="nomination-list"></div></div>
+
     <div id="mem-section" class="hidden glass-card">
-        <select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px;"><option value="">Select College</option><option value="IMC26">IMC26</option></select>
+        <h3 style="margin-top:0;">👥 College Members</h3>
+        <select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px;">
+            <option value="">Select College</option>
+            <option value="IMC26">IMC26</option>
+            <option value="ASLIN26">ASLIN26</option>
+        </select>
         <div id="user-folders-list"></div>
     </div>
-    <div id="stud-section" class="hidden glass-card"><h2>📤 Bulk Registration</h2><textarea id="bulk-input" class="login-field" style="height:150px;" placeholder="Name, CollID, ID, Pass, Role"></textarea><button class="btn-sm" style="background:var(--blue); color:white; width:100%;" onclick="processBulk()">Bulk Upload</button></div>
+
+    <div id="stud-section" class="hidden glass-card">
+        <h2>📤 Bulk Upload</h2>
+        <textarea id="bulk-input" class="login-field" style="height:150px;" placeholder="Name, CollID, ID, Pass, Role"></textarea>
+        <button class="btn-sm" style="background:var(--blue); color:white; width:100%;" onclick="processBulk()">Bulk Upload</button>
+    </div>
 </div>
 
 <div id="search-results-popup" class="hidden">
     <div class="popup-content">
-        <div class="popup-header">
-            <h3 style="margin:0;">🔎 Search Results</h3>
-            <button class="btn-sm" style="background:#ef4444; color:white;" onclick="closeSearchPopUp()">Close</button>
-        </div>
-        <div class="popup-body">
-            <table>
-                <thead><tr><th>Book Title</th><th>Category & Promo</th><th>Action</th></tr></thead>
-                <tbody id="popup-results-list"></tbody>
-            </table>
-        </div>
+        <div class="popup-header"><h3>🔎 Search Results</h3><button class="btn-sm" style="background:#ef4444; color:white;" onclick="closeSearchPopUp()">Close</button></div>
+        <div class="popup-body"><table><thead><tr><th>Title</th><th>Category</th><th>Action</th></tr></thead><tbody id="popup-results-list"></tbody></table></div>
     </div>
 </div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
     firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
-    const adminAccounts = { "aslin": "Phlagon@28", "IMC26": "IMC26@theo" };
+    const adminAccounts = { "aslin": "Phlagon@28", "IMC26": "IMC26@theo", "ASLIN26": "ASL@theo" };
     let isSuperAdmin = false; let fullInventory = [];
 
     function handleAdminLogin() {
@@ -116,33 +114,35 @@
             isSuperAdmin = (cid === "aslin");
             document.getElementById('auth-overlay').classList.add('hidden');
             document.getElementById('master-panel').classList.remove('hidden');
-            if(isSuperAdmin) document.getElementById('super-admin-reg').classList.remove('hidden');
             initAdmin();
-        } else { alert("Denied: Wrong Credentials"); }
+        } else { alert("Denied"); }
     }
 
     function initAdmin() {
+        // Fix: Ensure fullInventory is loaded before search starts
         db.collection("library_settings").onSnapshot(snap => {
             fullInventory = [];
-            snap.forEach(doc => fullInventory.push({ id: doc.id, ...doc.data() }));
-            renderInventory(fullInventory);
+            const list = document.getElementById('inventory-list'); list.innerHTML = "";
+            snap.forEach(doc => {
+                const b = doc.data(); const id = doc.id;
+                fullInventory.push({ id, ...b });
+                const allowed = b.allowedColleges || [];
+                list.innerHTML += `<tr><td><b>${b.title}</b><br><small>${b.category || 'None'}</small></td><td><small>${allowed.join(', ')}</small></td><td style="position:relative;"><button class="btn-sm" style="background:var(--purple); color:white;" onclick="toggleM('a-${id}')">Access</button><div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div><button class="btn-sm" style="background:var(--green); color:white;" onclick="toggleM('c-${id}')">Category</button><div id="c-${id}" class="dropdown-menu"><div class="dropdown-item" onclick="updateField('${id}','category','Theology')">Theology</div><div class="dropdown-item" onclick="updateField('${id}','category','Church History')">Church History</div><div class="dropdown-item" onclick="updateField('${id}','category','Mission')">Mission</div><div class="dropdown-item" onclick="updateField('${id}','category','Other Books')">Other Books</div></div><button class="btn-sm" style="background:var(--orange); color:white;" onclick="toggleM('p-${id}')">Promo</button><div id="p-${id}" class="dropdown-menu"><div class="dropdown-item" onclick="updateField('${id}','recent',${!b.recent})">Recent: ${b.recent?'✅':'OFF'}</div><div class="dropdown-item" onclick="updateField('${id}','trending',${!b.trending})">Trending: ${b.trending?'✅':'OFF'}</div></div></td><td><button class="btn-sm" style="background:#ef4444; color:white;" onclick="deletePDF('${id}')">🗑️</button></td></tr>`;
+            });
         });
         
         db.collection("faculty_nominations").where("status","==","pending").onSnapshot(snap => {
-            const list = document.getElementById('nomination-list'); if(!list) return;
-            list.innerHTML = "";
-            snap.forEach(doc => { const n = doc.data(); list.innerHTML += `<div class="glass-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span><b>${n.bookTitle}</b> (${n.facultyName})</span><button class="btn-sm" style="background:var(--green); color:white;" onclick="approveNom('${doc.id}','${n.bookId}','${n.collegeId}','${n.facultyName}')">Approve</button></div>`; });
+            const list = document.getElementById('nomination-list'); list.innerHTML = "";
+            snap.forEach(doc => { const n = doc.data(); list.innerHTML += `<div class="user-folder"><span><b>${n.bookTitle}</b> (${n.facultyName})</span><button class="btn-sm" style="background:var(--green); color:white;" onclick="approveNom('${doc.id}','${n.bookId}','${n.collegeId}','${n.facultyName}')">Approve</button></div>`; });
         });
     }
 
-    // --- UPDATED SEARCH LOGIC ---
+    // --- Search Fix ---
     function handleSearchInput(val) {
         const suggestions = document.getElementById('search-suggestions');
         if (!val.trim()) { suggestions.classList.add('hidden'); return; }
-        
         const matches = fullInventory.filter(b => b.title.toLowerCase().includes(val.toLowerCase())).slice(0, 5);
         if (matches.length === 0) { suggestions.classList.add('hidden'); return; }
-        
         suggestions.innerHTML = matches.map(m => `<div class="dropdown-item" onclick="triggerSearchPopUp('${m.title}')" style="padding:12px; border-bottom:1px solid var(--border); background:var(--card-bg);">${m.title}</div>`).join('');
         suggestions.classList.remove('hidden');
     }
@@ -151,74 +151,34 @@
         document.getElementById('search-suggestions').classList.add('hidden');
         const list = document.getElementById('popup-results-list');
         const results = fullInventory.filter(b => b.title.toLowerCase().includes(query.toLowerCase()));
-        
-        list.innerHTML = results.length ? "" : "<tr><td colspan='3'>No results found</td></tr>";
+        list.innerHTML = results.length ? "" : "<tr><td colspan='3'>No matches</td></tr>";
         results.forEach(b => {
-            const promo = `<div style="font-size:10px; margin-top:4px;">
-                ${b.recent ? '<span style="color:var(--orange)">[Recent] </span>' : ''}
-                ${b.trending ? '<span style="color:var(--purple)">[Trending] </span>' : ''}
-                ${b.mission ? '<span style="color:var(--green)">[Mission]</span>' : ''}
-            </div>`;
-            list.innerHTML += `<tr>
-                <td><b>${b.title}</b></td>
-                <td><small>${b.category || 'Uncategorized'}</small>${promo}</td>
-                <td><button class="btn-sm" style="background:var(--blue); color:white;" onclick="focusInventoryItem('${b.id}')">View in List</button></td>
-            </tr>`;
+            list.innerHTML += `<tr><td><b>${b.title}</b></td><td>${b.category}</td><td><button class="btn-sm" style="background:var(--blue); color:white;" onclick="closeSearchPopUp()">View Below</button></td></tr>`;
         });
         document.getElementById('search-results-popup').classList.remove('hidden');
     }
 
-    function focusInventoryItem(id) {
-        closeSearchPopUp();
-        const rows = document.querySelectorAll('#inventory-list tr');
-        rows.forEach(row => {
-            if(row.innerHTML.includes(id)) {
-                row.style.background = "#334155";
-                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                setTimeout(() => row.style.background = "transparent", 2000);
-            }
-        });
+    // --- Management Fix (Loading Members) ---
+    async function loadCollegeStudents(cid) {
+        if(!cid) return;
+        const list = document.getElementById('user-folders-list');
+        list.innerHTML = "Loading...";
+        try {
+            const snap = await db.collection("users").where("collegeId", "==", cid).get();
+            list.innerHTML = snap.empty ? "No members found." : "";
+            snap.forEach(doc => {
+                const u = doc.data();
+                list.innerHTML += `<div class="user-folder"><span>📂 <b>${u.fullName}</b></span><small style="color:var(--blue)">${u.role || 'student'}</small></div>`;
+            });
+        } catch (e) { list.innerHTML = "Error loading."; }
     }
 
     function closeSearchPopUp() { document.getElementById('search-results-popup').classList.add('hidden'); }
-
-    function renderInventory(data) {
-        const list = document.getElementById('inventory-list'); list.innerHTML = "";
-        data.forEach(b => {
-            const id = b.id; const allowed = b.allowedColleges || [];
-            list.innerHTML += `<tr>
-                <td><b>${b.title}</b><br><small>${b.category || 'Uncategorized'}</small></td>
-                <td><small>${allowed.join(', ') || '🔒'}</small></td>
-                <td style="position:relative;">
-                    <button class="btn-sm" style="background:var(--purple); color:white;" onclick="toggleM('a-${id}')">Access</button>
-                    <div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>
-                    <button class="btn-sm" style="background:var(--green); color:white;" onclick="toggleM('c-${id}')">Category</button>
-                    <div id="c-${id}" class="dropdown-menu">
-                        <div class="dropdown-item" onclick="updateField('${id}','category','Theology')">Systematic Theology</div>
-                        <div class="dropdown-item" onclick="updateField('${id}','category','Church History')">CHURCH History</div>
-                        <div class="dropdown-item" onclick="updateField('${id}','category','Mission')">Mission</div>
-                        <div class="dropdown-item" onclick="updateField('${id}','category','Bible Intro')">Intro to BIBLE</div>
-                        <div class="dropdown-item" onclick="updateField('${id}','category','Acts')">Acts of Apostles</div>
-                        <div class="dropdown-item" onclick="updateField('${id}','category','Other Books')">Other Books</div>
-                    </div>
-                    <button class="btn-sm" style="background:var(--orange); color:white;" onclick="toggleM('p-${id}')">Promo</button>
-                    <div id="p-${id}" class="dropdown-menu">
-                        <div class="dropdown-item" onclick="updateField('${id}','recent',${!b.recent})">Recent: ${b.recent?'✅':'OFF'}</div>
-                        <div class="dropdown-item" onclick="updateField('${id}','trending',${!b.trending})">Trending: ${b.trending?'✅':'OFF'}</div>
-                        <div class="dropdown-item" onclick="updateField('${id}','mission',${!b.mission})">Mission Focus: ${b.mission?'✅':'OFF'}</div>
-                    </div>
-                </td>
-                <td><button class="btn-sm" style="background:#ef4444; color:white;" onclick="deletePDF('${id}')">🗑️</button></td>
-            </tr>`;
-        });
-    }
-
     function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('t-'+t).classList.add('active'); document.querySelectorAll('.glass-card').forEach(s => s.classList.add('hidden')); document.getElementById(t+'-section').classList.remove('hidden'); }
-    function toggleM(id) { const menu = document.getElementById(id); const isShowing = menu.classList.contains('show'); document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show')); if(!isShowing) menu.classList.add('show'); }
-    async function approveNom(docId, bookId, collegeId, facName) { await db.collection("library_settings").doc(bookId).set({ recommendations: { [collegeId]: facName } }, { merge: true }); await db.collection("faculty_nominations").doc(docId).delete(); alert("Approved!"); }
+    function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => { if(m.id !== id) m.classList.remove('show'); }); document.getElementById(id).classList.toggle('show'); }
+    async function approveNom(docId, bookId, collegeId, facName) { await db.collection("library_settings").doc(bookId).set({ recommendations: { [collegeId]: facName } }, { merge: true }); await db.collection("faculty_nominations").doc(docId).delete(); alert("Live!"); }
     async function updateField(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
     async function toggleAccess(id, coll, has) { const ref = db.collection("library_settings").doc(id); const doc = await ref.get(); let allowed = doc.data().allowedColleges || []; allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll]; await ref.update({ allowedColleges: allowed }); }
-    async function registerBook() { const id = document.getElementById('reg-file-id').value.trim(); const title = document.getElementById('reg-file-title').value.trim(); if(id && title) await db.collection("library_settings").doc(id).set({ title, category: "Theology", allowedColleges: [], mission: false }); alert("Added!"); }
     async function deletePDF(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
     async function processBulk() { const lines = document.getElementById('bulk-input').value.split('\n'); for(let l of lines) { const p = l.split(',').map(i=>i.trim()); if(p.length===5) await db.collection("users").add({ fullName:p[0], collegeId:p[1], studentId:p[2], password:p[3], role:p[4].toLowerCase(), createdAt: new Date().toISOString() }); } alert("Done!"); }
 </script>
