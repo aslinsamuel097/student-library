@@ -31,20 +31,12 @@
         th { text-align: left; padding: 12px; color: var(--text-sub); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
         td { padding: 15px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
         
-        .btn-sm { padding: 8px 15px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        .dropdown-menu { display: none; position: absolute; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 100; min-width: 180px; padding: 10px; top: 40px; }
-        .show { display: block; }
-        .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; color: var(--text-main); }
-        .dropdown-item:hover { background: var(--blue); }
-
-        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-box { background: #0f172a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
-        .stat-val { font-size: 18px; font-weight: 800; color: var(--blue); display: block; }
-        .stat-lbl { font-size: 10px; color: var(--text-sub); text-transform: uppercase; }
-
-        #user-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 6000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .modal-content { background: var(--card-bg); width: 100%; max-width: 650px; border-radius: 24px; padding: 30px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+        .btn-sm { padding: 8px 15px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; }
         .hidden { display: none !important; }
+
+        /* Modal / Popup */
+        #restriction-popup, #user-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .popup-content { background: var(--card-bg); padding: 30px; border-radius: 20px; border: 1px solid var(--border); text-align: center; max-width: 350px; }
     </style>
 </head>
 <body>
@@ -54,8 +46,8 @@
         <h2 style="color:var(--blue)">Admin Control</h2>
         <input type="text" id="admin-coll-id" class="login-field" placeholder="College ID">
         <input type="password" id="admin-pass" class="login-field" placeholder="Password">
-        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px;" onclick="handleAdminLogin()">Login to Panel</button>
-        <p id="admin-status" style="color:#ef4444; font-size:11px; margin-top:10px; font-weight:600;"></p>
+        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px;" onclick="handleAdminLogin()">Login</button>
+        <p id="admin-status" style="color:#ef4444; font-size:11px; margin-top:10px;"></p>
     </div>
 </div>
 
@@ -63,40 +55,18 @@
     <div class="nav-tabs">
         <button id="t-inv" class="tab-btn active" onclick="switchTab('inv')">Inventory</button>
         <button id="t-mem" class="tab-btn" onclick="switchTab('mem')">Member Activity</button>
-        <button id="t-rec" class="tab-btn" onclick="switchTab('rec')">Recommendations</button>
-        <button id="t-stud" class="tab-btn" onclick="switchTab('stud')">Bulk Upload</button>
+        <button id="t-stud" class="tab-btn" onclick="handleMemberTab()">Member Management</button>
         <button class="tab-btn" style="background:#ef4444; color:white; margin-left:auto;" onclick="location.reload()">Logout</button>
     </div>
 
     <div id="inv-section" class="glass-card">
-        <div id="super-admin-tools" class="hidden" style="margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
-            <h3 style="margin:0 0 15px; color:var(--blue);">🔗 Register GitHub PDF</h3>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="reg-file-id" class="login-field" placeholder="File ID (Exact name)">
-                <input type="text" id="reg-file-title" class="login-field" placeholder="Display Title">
-                <button class="btn-sm" style="background:var(--blue); color:white; height:45px;" onclick="registerBook()">Register</button>
-            </div>
-        </div>
-        <table><thead><tr><th>Resource</th><th>Access</th><th>Manage</th><th>Actions</th></tr></thead><tbody id="inventory-list"></tbody></table>
-    </div>
-
-    <div id="rec-section" class="hidden glass-card">
-        <h2 style="margin-top:0;">⭐ Faculty Recommendations</h2>
-        <div style="max-width:400px; display:grid; gap:15px;">
-            <select id="rec-coll" class="login-field" onchange="fetchFaculty(this.value)">
-                <option value="">1. Select College</option>
-                <option value="IMC26">IMC26</option>
-                <option value="ASLIN26">ASLIN26</option>
-            </select>
-            <select id="rec-faculty" class="login-field"><option value="">2. Choose Faculty</option></select>
-            <select id="rec-book" class="login-field"><option value="">3. Select Book</option></select>
-            <button class="btn-sm" style="background:var(--orange); color:white; padding:15px;" onclick="saveRecommendation()">Set Recommendation Live</button>
-        </div>
+        <h2 style="margin-top:0;">📂 Global Inventory</h2>
+        <table><thead><tr><th>Resource</th><th>Access</th><th>Manage</th></tr></thead><tbody id="inventory-list"></tbody></table>
     </div>
 
     <div id="mem-section" class="hidden glass-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="margin:0;">👥 Activity Monitoring</h2>
+            <h2 style="margin:0;">👥 Monitoring</h2>
             <select id="super-admin-college-select" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:200px; margin:0;">
                 <option value="">Choose College</option>
                 <option value="IMC26">IMC26</option>
@@ -107,43 +77,31 @@
     </div>
 
     <div id="stud-section" class="hidden glass-card">
-        <h2>📤 Bulk Import (Student/Faculty)</h2>
-        <p style="font-size:11px; color:var(--text-sub);">Format: Name, CollegeID, ID, Password, Role(student/faculty)</p>
-        <textarea id="bulk-input" class="login-field" style="height:150px;" placeholder="John Doe, IMC26, ST101, pass123, student"></textarea>
-        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px;" onclick="processBulk()">Process Upload</button>
+        <h2>📤 Member Registration</h2>
+        <div style="background:#0f172a; padding:15px; border-radius:12px; border:1px solid var(--border); margin-bottom:20px;">
+            <p style="margin-top:0; font-size:12px; color:var(--blue);">Bulk Format: Name, CollegeID, ID, Password, Role(student/faculty)</p>
+            <textarea id="bulk-input" class="login-field" style="height:120px;" placeholder="John Doe, IMC26, ST101, pass123, student"></textarea>
+            <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:12px;" onclick="processBulk()">Register Members</button>
+        </div>
     </div>
 </div>
 
-<div id="user-modal" class="hidden">
-    <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 id="modal-title" style="margin:0;">User Report</h3>
-            <div style="display:flex; gap:10px;">
-                <button onclick="downloadReport()" class="btn-sm" style="background:var(--blue); color:white;">Download CSV</button>
-                <button onclick="document.getElementById('user-modal').classList.add('hidden')" class="btn-sm" style="background:#ef4444; color:white;">Close</button>
-            </div>
-        </div>
-        <div id="modal-body"></div>
-        <div id="expiry-box"></div>
-        <h4 style="margin-top:25px; border-top:1px solid var(--border); padding-top:15px;">Live Logs</h4>
-        <table><thead><tr><th>Date</th><th>Action</th><th>Duration</th></tr></thead><tbody id="detailed-log-body"></tbody></table>
+<div id="restriction-popup" class="hidden">
+    <div class="popup-content">
+        <div style="font-size:40px; margin-bottom:10px;">🔒</div>
+        <h3 style="margin:0; color:var(--orange);">Access Restricted</h3>
+        <p style="font-size:13px; color:var(--text-sub);">Only the Super Administrator can add new members. Please login to the Super Admin panel or contact the administrator for assistance.</p>
+        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; margin-top:10px;" onclick="closePopup()">I Understand</button>
     </div>
 </div>
 
 <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg",
-      authDomain: "theolib.in",
-      projectId: "student-library-4a4e7",
-      storageBucket: "student-library-4a4e7.firebasestorage.app",
-      messagingSenderId: "827419448917",
-      appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc"
-    };
+    const firebaseConfig = { apiKey: "...", authDomain: "...", projectId: "...", storageBucket: "...", messagingSenderId: "...", appId: "..." };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     const adminAccounts = { "IMC26": "IMC26@theo", "ASLIN26": "ASL@theo", "aslin": "Phlagon@28" };
-    let currentAdminID = ""; let isSuperAdmin = false; let reportData = null;
+    let currentAdminID = ""; let isSuperAdmin = false;
 
     function handleAdminLogin() {
         const cid = document.getElementById('admin-coll-id').value;
@@ -152,9 +110,42 @@
             currentAdminID = cid; isSuperAdmin = (cid === "aslin");
             document.getElementById('auth-overlay').classList.add('hidden');
             document.getElementById('master-panel').classList.remove('hidden');
-            if(isSuperAdmin) document.getElementById('super-admin-tools').classList.remove('hidden');
             initAdmin();
-        } else { document.getElementById('admin-status').innerText = "Invalid Credentials"; }
+        } else { document.getElementById('admin-status').innerText = "Access Denied"; }
+    }
+
+    function handleMemberTab() {
+        if (!isSuperAdmin) {
+            document.getElementById('restriction-popup').classList.remove('hidden');
+        } else {
+            switchTab('stud');
+        }
+    }
+
+    function closePopup() { document.getElementById('restriction-popup').classList.add('hidden'); }
+
+    async function processBulk() {
+        const lines = document.getElementById('bulk-input').value.split('\n');
+        for(let l of lines) {
+            const p = l.split(',').map(i=>i.trim());
+            if(p.length===5) {
+                // p[4] is the role (student/faculty)
+                await db.collection("users").add({ 
+                    fullName: p[0], 
+                    collegeId: p[1], 
+                    studentId: p[2], 
+                    password: p[3], 
+                    role: p[4].toLowerCase(), 
+                    createdAt: new Date().toISOString() 
+                });
+            }
+        }
+        alert("Success! The new members can now login as " + p[4]);
+    }
+
+    function switchTab(t) { 
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === `t-${t}`)); 
+        document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', s.id !== `${t}-section`)); 
     }
 
     function initAdmin() {
@@ -162,114 +153,20 @@
             const list = document.getElementById('inventory-list'); list.innerHTML = "";
             snap.forEach(doc => {
                 const b = doc.data(); const id = doc.id; const allowed = b.allowedColleges || [];
-                const accessBtn = isSuperAdmin ? `<button class="btn-sm" style="background:var(--purple); color:white;" onclick="toggleM('a-${id}')">🔓 Access</button>` : '';
-                const promoBtn = isSuperAdmin ? `<button class="btn-sm" style="background:var(--orange); color:white;" onclick="toggleM('p-${id}')">🔥 Promo</button>` : '';
-                const deleteBtn = isSuperAdmin ? `<td><button class="btn-sm" style="background:#ef4444; color:white;" onclick="deletePDF('${id}')">🗑️ Delete</button></td>` : '<td>-</td>';
-                
-                list.innerHTML += `<tr><td><b>${b.title}</b><br><small style="color:var(--blue)">${b.category}</small></td>
+                list.innerHTML += `<tr><td><b>${b.title}</b><br><small>${b.category}</small></td>
                     <td><small>${allowed.join(', ') || '🔒'}</small></td>
-                    <td style="position:relative;">
-                        ${accessBtn}<div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>
-                        <button class="btn-sm" style="background:var(--green); color:white;" onclick="toggleM('c-${id}')">📁 Category</button>
-                        <div id="c-${id}" class="dropdown-menu">${["Theology", "History", "Mission", "Acts", "Gospel", "Bible"].map(c => `<div class="dropdown-item" onclick="updateField('${id}','category','${c}')">${c}</div>`).join('')}</div>
-                        ${promoBtn}<div id="p-${id}" class="dropdown-menu"><div class="dropdown-item" onclick="updateField('${id}','recent',true)">Add Recent</div><div class="dropdown-item" onclick="updateField('${id}','trending',true)">Add Trending</div></div>
-                    </td>${deleteBtn}</tr>`;
+                    <td><button class="btn-sm" style="background:var(--blue); color:white;">Manage</button></td></tr>`;
             });
         });
-    }
-
-    // RECOMMENDATION LOGIC
-    async function fetchFaculty(cid) {
-        if(!cid) return;
-        // Populate Faculty
-        const fSnap = await db.collection("users").where("collegeId","==",cid).where("role","==","faculty").get();
-        const fSel = document.getElementById('rec-faculty'); fSel.innerHTML = '<option value="">Choose Faculty</option>';
-        fSnap.forEach(doc => fSel.innerHTML += `<option value="${doc.data().fullName}">${doc.data().fullName}</option>`);
-        
-        // Populate Books
-        const bSnap = await db.collection("library_settings").get();
-        const bSel = document.getElementById('rec-book'); bSel.innerHTML = '<option value="">Select Book</option>';
-        bSnap.forEach(doc => bSel.innerHTML += `<option value="${doc.id}">${doc.data().title}</option>`);
-    }
-
-    async function saveRecommendation() {
-        const cid = document.getElementById('rec-coll').value;
-        const faculty = document.getElementById('rec-faculty').value;
-        const bookId = document.getElementById('rec-book').value;
-        if(!cid || !faculty || !bookId) { alert("Complete all 3 selections"); return; }
-        
-        await db.collection("library_settings").doc(bookId).set({
-            recommendations: { [cid]: faculty }
-        }, { merge: true });
-        alert("Recommendation Added Successfully!");
-    }
-
-    async function registerBook() {
-        const id = document.getElementById('reg-file-id').value.trim();
-        const title = document.getElementById('reg-file-title').value.trim();
-        if(!id || !title) return;
-        await db.collection("library_settings").doc(id).set({ title, category: "Theology", allowedColleges: [], recent: false, trending: false, updatedAt: new Date().toISOString() });
-        alert("Book Registered!");
     }
 
     function loadCollegeStudents(cid) {
         if(!cid) return;
         db.collection("users").where("collegeId", "==", cid).onSnapshot(snap => {
             const list = document.getElementById('user-folders-list'); list.innerHTML = "";
-            snap.forEach(doc => list.innerHTML += `<div class="user-folder" onclick='openReport("${doc.id}", ${JSON.stringify(doc.data())})'>📂 <b>${doc.data().fullName}</b> (${doc.data().role})</div>`);
+            snap.forEach(doc => list.innerHTML += `<div style="background:#0f172a; padding:12px; margin-bottom:8px; border-radius:10px; border:1px solid var(--border);">📂 <b>${doc.data().fullName}</b> (${doc.data().role})</div>`);
         });
     }
-
-    async function openReport(uid, user) {
-        document.getElementById('user-modal').classList.remove('hidden');
-        document.getElementById('modal-title').innerText = user.fullName + " (" + user.role + ")";
-        const logs = await db.collection("activity_logs").where("userId", "==", uid).orderBy("timestamp", "desc").get();
-        reportData = { user, logs: [] };
-        let stats = { app: 0, read: 0 };
-        let html = "";
-        logs.forEach(l => {
-            const d = l.data(); const dur = parseInt(d.duration) || 0;
-            if(d.activityType.includes("App")) stats.app += dur;
-            if(d.activityType.includes("Read")) stats.read += dur;
-            html += `<tr><td>${new Date(d.timestamp).toLocaleDateString()}</td><td>${d.activityType}</td><td>${d.duration}</td></tr>`;
-            reportData.logs.push(d);
-        });
-        const fmt = (s) => s < 60 ? s + "s" : Math.floor(s/60) + "m " + (s%60) + "s";
-        document.getElementById('modal-body').innerHTML = `<div class="stat-grid">
-            <div class="stat-box"><span class="stat-lbl">Usage</span><span class="stat-val">${fmt(stats.app)}</span></div>
-            <div class="stat-box"><span class="stat-lbl">Reading</span><span class="stat-val">${fmt(stats.read)}</span></div>
-        </div><div style="background:#0f172a; padding:15px; border-radius:12px; font-size:12px;">ID: ${user.studentId} | College: ${user.collegeId}</div>`;
-        document.getElementById('detailed-log-body').innerHTML = html;
-    }
-
-    function downloadReport() {
-        if(!reportData) return;
-        let csv = "Time,Activity,Duration\n";
-        reportData.logs.forEach(l => csv += `${new Date(l.timestamp).toLocaleString()},"${l.activityType}",${l.duration}\n`);
-        const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-        link.download = `Report_${reportData.user.fullName}.csv`; link.click();
-    }
-
-    async function toggleAccess(id, coll, has) {
-        const ref = db.collection("library_settings").doc(id); const doc = await ref.get();
-        let allowed = doc.data().allowedColleges || [];
-        allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll];
-        await ref.update({ allowedColleges: allowed });
-    }
-
-    async function processBulk() {
-        const lines = document.getElementById('bulk-input').value.split('\n');
-        for(let l of lines) {
-            const p = l.split(',').map(i=>i.trim());
-            if(p.length===5) await db.collection("users").add({ fullName:p[0], collegeId:p[1], studentId:p[2], password:p[3], role:p[4], createdAt: new Date().toISOString() });
-        }
-        alert("Bulk Upload Complete");
-    }
-
-    function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => m.id !== id ? m.classList.remove('show') : null); document.getElementById(id).classList.toggle('show'); }
-    function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id===`t-${t}`)); document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', s.id!==`${t}-section`)); }
-    async function updateField(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
-    async function deletePDF(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
 </script>
 </body>
 </html>
