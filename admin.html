@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Theological Library</title>
+    <title>Theological Library - Admin Master Control</title>
     <style>
         :root {
             --bg: #0b1120;
@@ -11,43 +11,41 @@
             --primary: #3b82f6;
             --text: #f8fafc;
             --danger: #ef4444;
+            --accent: #10b981;
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: var(--card); padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: none; box-sizing: border-box; }
-        button { background: var(--primary); color: white; cursor: pointer; font-weight: bold; }
-        button:hover { opacity: 0.9; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        button { background: var(--primary); font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
+        button:hover { filter: brightness(1.2); }
         .btn-danger { background: var(--danger); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #334155; }
-        .search-container { margin-bottom: 20px; }
-        .details-panel { background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid var(--primary); }
+        th { color: var(--primary); text-transform: uppercase; font-size: 12px; }
+        
+        .member-item { background: #334155; padding: 10px; margin: 5px 0; border-radius: 6px; cursor: pointer; border-left: 4px solid transparent; }
+        .member-item:hover { border-left-color: var(--primary); background: #475569; }
+        .details-panel { padding: 15px; background: #0f172a; border-radius: 8px; border: 1px solid var(--primary); min-height: 100px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Library Administration Portal</h2>
+    <h1 style="color: var(--primary);">Library Administration Portal</h1>
 
     <div class="card">
         <h3>Book Inventory Management</h3>
-        <div class="search-container">
-            <input type="text" id="adminSearchInput" placeholder="Search by title, author, or category..." onkeyup="filterInventory()">
-        </div>
-        <div style="max-height: 400px; overflow-y: auto;">
+        <input type="text" id="adminSearchInput" placeholder="Search by title, author, or category..." onkeyup="filterInventory()">
+        <div style="max-height: 300px; overflow-y: auto;">
             <table>
                 <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Author</th>
-                        <th>Category</th>
-                        <th>Action</th>
-                    </tr>
+                    <tr><th>Title</th><th>Author</th><th>Category</th><th>Action</th></tr>
                 </thead>
-                <tbody id="inventoryTableBody">
-                    </tbody>
+                <tbody id="inventoryTableBody"></tbody>
             </table>
         </div>
     </div>
@@ -55,22 +53,20 @@
     <div class="grid">
         <div class="card">
             <h3>Member Monitoring</h3>
-            <label>Select College/Department:</label>
+            <label>Select Department:</label>
             <select id="collegeFilter" onchange="loadMembersByCollege()">
                 <option value="">-- Select --</option>
                 <option value="Theology">Theology</option>
-                <option value="Arts">Arts</option>
-                <option value="Science">Science</option>
+                <option value="CHURCH History">CHURCH History</option>
+                <option value="Systematic Theology">Systematic Theology</option>
             </select>
-            
-            <div id="memberList">
-                </div>
+            <div id="memberList" style="margin-top:15px;"></div>
         </div>
 
         <div class="card">
             <h3>Member Information</h3>
             <div id="memberDetailPanel" class="details-panel">
-                Select a member to view their details and borrowing history.
+                Click a member name to view details and borrowing history.
             </div>
         </div>
     </div>
@@ -78,100 +74,89 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // --- PASTE YOUR FIREBASE CONFIG HERE ---
     const firebaseConfig = {
-        // Your existing Firebase config remains here
         apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
+        authDomain: "theolib.firebaseapp.com",
+        projectId: "theolib",
+        storageBucket: "theolib.appspot.com",
+        messagingSenderId: "SENDER_ID",
+        appId: "APP_ID"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- 1. SEARCH LOGIC (FILTERING) ---
+    // RESTORED SEARCH LOGIC
     window.filterInventory = function() {
         const input = document.getElementById('adminSearchInput').value.toLowerCase();
         const rows = document.querySelectorAll('#inventoryTableBody tr');
-        
         rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(input) ? "" : "none";
+            row.style.display = row.textContent.toLowerCase().includes(input) ? "" : "none";
         });
-    }
+    };
 
-    // --- 2. LOAD INVENTORY ---
+    // RESTORED BOOK LOADING
     async function loadInventory() {
-        const querySnapshot = await getDocs(collection(db, "books"));
         const tableBody = document.getElementById('inventoryTableBody');
-        tableBody.innerHTML = "";
-        
-        querySnapshot.forEach((doc) => {
-            const book = doc.data();
-            const row = `<tr>
-                <td>${book.title}</td>
-                <td>${book.author}</td>
-                <td>${book.category || 'N/A'}</td>
-                <td><button onclick="deleteBook('${doc.id}')" class="btn-danger">Delete</button></td>
-            </tr>`;
-            tableBody.innerHTML += row;
-        });
-    }
-
-    // --- 3. MEMBER LOGIC ---
-    window.loadMembersByCollege = async function() {
-        const college = document.getElementById('collegeFilter').value;
-        const listContainer = document.getElementById('memberList');
-        listContainer.innerHTML = "Searching...";
-
         try {
-            const q = query(collection(db, "members"), where("department", "==", college));
-            const querySnapshot = await getDocs(q);
-            listContainer.innerHTML = "";
-
-            if (querySnapshot.empty) {
-                listContainer.innerHTML = "No members found in this department.";
-                return;
-            }
-
-            querySnapshot.forEach((doc) => {
-                const member = doc.data();
-                const btn = document.createElement('button');
-                btn.style.background = "#334155";
-                btn.style.textAlign = "left";
-                btn.innerHTML = `${member.name} (${member.collegeId})`;
-                btn.onclick = () => showMemberDetails(member);
-                listContainer.appendChild(btn);
+            const querySnapshot = await getDocs(collection(db, "books"));
+            tableBody.innerHTML = "";
+            querySnapshot.forEach((docSnap) => {
+                const book = docSnap.data();
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${book.title}</td>
+                        <td>${book.author}</td>
+                        <td>${book.category || 'Other'}</td>
+                        <td><button class="btn-danger" style="padding:5px 10px;" onclick="deleteBook('${docSnap.id}')">Delete</button></td>
+                    </tr>`;
             });
-        } catch (e) {
-            console.error(e);
-            listContainer.innerHTML = "Error loading members.";
-        }
+        } catch (e) { console.error("Error loading books:", e); }
     }
 
-    // --- 4. SHOW DETAILS LOGIC ---
-    window.showMemberDetails = function(member) {
-        const panel = document.getElementById('memberDetailPanel');
-        panel.innerHTML = `
+    // RESTORED MEMBER MONITORING
+    window.loadMembersByCollege = async function() {
+        const dept = document.getElementById('collegeFilter').value;
+        const list = document.getElementById('memberList');
+        list.innerHTML = "Loading...";
+
+        const q = query(collection(db, "members"), where("department", "==", dept));
+        const querySnapshot = await getDocs(q);
+        list.innerHTML = querySnapshot.empty ? "No members found." : "";
+
+        querySnapshot.forEach((docSnap) => {
+            const member = docSnap.data();
+            const div = document.createElement('div');
+            div.className = 'member-item';
+            div.innerHTML = `<strong>${member.name}</strong> (${member.collegeId})`;
+            div.onclick = () => showMemberDetails(member);
+            list.appendChild(div);
+        });
+    };
+
+    // RESTORED DETAILS LOGIC
+    window.showMemberDetails = (member) => {
+        document.getElementById('memberDetailPanel').innerHTML = `
             <div style="border-left: 4px solid var(--primary); padding-left: 15px;">
-                <h4 style="margin: 0;">${member.name}</h4>
-                <p><strong>College ID:</strong> ${member.collegeId}</p>
-                <p><strong>Department:</strong> ${member.department}</p>
-                <p><strong>Join Date:</strong> ${member.joinDate || 'N/A'}</p>
-                <p><strong>Approval Status:</strong> ${member.isApproved ? "✅ Approved" : "⏳ Pending"}</p>
-                <hr style="border: 0.1px solid #334155">
-                <button onclick="deleteMemberRecord('${member.collegeId}')" class="btn-danger" style="padding: 5px;">Remove Member</button>
-            </div>
-        `;
-    }
+                <h4>${member.name}</h4>
+                <p><strong>ID:</strong> ${member.collegeId}</p>
+                <p><strong>Dept:</strong> ${member.department}</p>
+                <p><strong>Status:</strong> ${member.isApproved ? "Approved" : "Pending"}</p>
+            </div>`;
+    };
+
+    window.deleteBook = async (id) => {
+        if(confirm("Delete this book?")) {
+            await deleteDoc(doc(db, "books", id));
+            loadInventory();
+        }
+    };
 
     // Initial Load
     loadInventory();
-
 </script>
 </body>
 </html>
