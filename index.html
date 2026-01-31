@@ -92,6 +92,7 @@
         const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
         let currentUser = null; let collegeBooks = [];
+        let trackingInterval = null;
 
         async function handleLogin() {
             const role = document.getElementById('login-role').value; const cid = document.getElementById('login-coll-id').value.trim();
@@ -100,8 +101,29 @@
             if(!snap.empty) {
                 const u = snap.docs[0].data(); if((u.role || 'student') !== role) { alert("Wrong Role"); return; }
                 currentUser = { uid: snap.docs[0].id, ...u }; document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden');
-                loadLib(); listenBorrows();
+                loadLib(); listenBorrows(); startTracking("Login Session");
             } else { alert("Error"); }
+        }
+
+        // --- TRACKING LOGIC ---
+        function startTracking(type, bookTitle = "") {
+            if(trackingInterval) clearInterval(trackingInterval);
+            trackingInterval = setInterval(async () => {
+                if(currentUser) {
+                    const dur = 60; // 60s heartbeats
+                    await db.collection("activity_logs").add({
+                        userId: currentUser.uid,
+                        activityType: type + (bookTitle ? ": " + bookTitle : ""),
+                        duration: dur,
+                        timestamp: Date.now()
+                    });
+                    // Sync the total user duration
+                    await db.collection("users").doc(currentUser.uid).update({
+                        usageTime: firebase.firestore.FieldValue.increment(dur),
+                        lastLogin: new Date().toISOString()
+                    });
+                }
+            }, 60000); 
         }
 
         function loadLib() {
@@ -129,7 +151,6 @@
             });
         }
 
-        // --- Search Logic ---
         function showSuggestions(val) {
             const box = document.getElementById('search-suggestions');
             if (!val.trim()) { box.classList.add('hidden'); return; }
@@ -171,11 +192,13 @@
             document.getElementById('reader-title').innerText = title;
             document.getElementById('pdf-frame').src = `https://docs.google.com/viewer?url=${window.location.origin}/public/${id}_read_online.pdf&embedded=true`;
             document.getElementById('reader-overlay').classList.remove('hidden'); 
+            startTracking("Online Reading", title);
         }
         function openBorrowedPdf(id, title) {
             document.getElementById('reader-title').innerText = title;
             document.getElementById('pdf-frame').src = `https://docs.google.com/viewer?url=${window.location.origin}/public/${id}.pdf&embedded=true`;
             document.getElementById('reader-overlay').classList.remove('hidden');
+            startTracking("Full Reading", title);
         }
         function toggleProfile() { 
             document.getElementById('prof-name').innerText = currentUser.fullName; document.getElementById('p-role').innerText = currentUser.role.toUpperCase();
@@ -194,7 +217,11 @@
         function showFullLibrary() { document.getElementById('full-lib-view').classList.remove('hidden'); }
         function showBorrowView() { document.getElementById('borrow-view').classList.remove('hidden'); }
         function closeView(id) { document.getElementById(id).classList.add('hidden'); }
-        function closeReader() { document.getElementById('reader-overlay').classList.add('hidden'); document.getElementById('pdf-frame').src = ""; }
+        function closeReader() { 
+            document.getElementById('reader-overlay').classList.add('hidden'); 
+            document.getElementById('pdf-frame').src = ""; 
+            startTracking("Dashboard Session"); // Switch back to general session tracking
+        }
     </script>
 </body>
 </html>
