@@ -11,23 +11,33 @@
     <style>
         :root { --blue: #3b82f6; --orange: #f97316; --green: #10b981; --purple: #a855f7; --bg: #0b1120; --card-bg: #1e293b; --text-main: #f8fafc; --text-sub: #94a3b8; --border: #334155; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
-        .hidden { display: none !important; }
         #auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: var(--card-bg); padding: 30px; border-radius: 24px; width: 90%; max-width: 350px; text-align: center; border: 1px solid var(--border); }
         .login-field, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; margin-bottom: 15px; outline: none; box-sizing: border-box; font-family: inherit; }
-        .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--border); overflow-x: auto; padding-bottom: 10px; }
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
         .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: var(--card-bg); color: var(--text-sub); transition: 0.3s; white-space: nowrap; }
         .tab-btn.active { background: var(--blue); color: white; }
         .glass-card { background: var(--card-bg); border-radius: 20px; padding: 25px; border: 1px solid var(--border); margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 12px; color: var(--text-sub); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
         td { padding: 15px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
-        .btn-sm { padding: 8px 12px; border-radius: 8px; border: none; font-size: 10px; cursor: pointer; font-weight: 600; margin: 2px; }
-        .dropdown-menu { display: none; position: absolute; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; z-index: 100; min-width: 160px; padding: 8px; top: 40px; }
+        .btn-sm { padding: 8px 15px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; }
+        .dropdown-menu { display: none; position: absolute; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 100; min-width: 180px; padding: 10px; top: 40px; }
         .show { display: block; }
-        .drop-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 11px; }
-        .drop-item:hover { background: var(--blue); }
-        .user-folder { background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; }
+        .dropdown-item:hover { background: var(--blue); color: white; }
+        .hidden { display: none !important; }
+        
+        /* Search Components */
+        .search-container { position: relative; margin-bottom: 20px; }
+        .search-bar { width: 100%; padding: 14px 20px; border-radius: 15px; background: #0f172a; border: 1px solid var(--border); color: white; outline: none; font-family: inherit; }
+        #search-suggestions { position: absolute; top: 55px; width: 100%; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; z-index: 200; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        
+        /* Pop-up Overlay */
+        #search-results-popup { position: fixed; inset: 0; background: rgba(11, 17, 32, 0.95); z-index: 6000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
+        .popup-content { background: var(--card-bg); width: 100%; max-width: 800px; border-radius: 24px; border: 1px solid var(--border); max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
+        .popup-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .popup-body { padding: 20px; overflow-y: auto; flex: 1; }
     </style>
 </head>
 <body>
@@ -35,145 +45,177 @@
 <div id="auth-overlay">
     <div class="login-card">
         <h2 style="color:var(--blue)">Admin Control</h2>
-        <input type="text" id="a-id" class="login-field" placeholder="Admin ID">
-        <input type="password" id="a-pass" class="login-field" placeholder="Password">
-        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px;" onclick="doLogin()">Login</button>
+        <input type="text" id="admin-coll-id" class="login-field" placeholder="College ID">
+        <input type="password" id="admin-pass" class="login-field" placeholder="Password">
+        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px;" onclick="handleAdminLogin()">Login to Master Panel</button>
     </div>
 </div>
 
 <div id="master-panel" class="hidden">
     <div class="nav-tabs">
-        <button id="t-inv" class="tab-btn active" onclick="tab('inv')">Resources</button>
-        <button id="t-nom" class="tab-btn" onclick="tab('nom')">Nominations</button>
-        <button id="t-mem" class="tab-btn" onclick="tab('mem')">Management</button>
-        <button id="t-add" class="tab-btn" onclick="tab('add')">Add Members</button>
+        <button id="t-inv" class="tab-btn active" onclick="switchTab('inv')">Inventory</button>
+        <button id="t-nom" class="tab-btn" onclick="switchTab('nom')">Nominations</button>
+        <button id="t-mem" class="tab-btn" onclick="switchTab('mem')">Monitoring</button>
+        <button id="t-stud" class="tab-btn" onclick="switchTab('stud')">Members</button>
         <button class="tab-btn" style="background:#ef4444; color:white; margin-left:auto;" onclick="location.reload()">Logout</button>
     </div>
 
-    <div id="inv-sec" class="glass-card">
+    <div id="inv-section" class="glass-card">
+        <div class="search-container">
+            <input type="text" id="inv-search" class="search-bar" placeholder="🔍 Type book name for suggestions... (Press Enter for full results)" 
+                oninput="handleSearchInput(this.value)" 
+                onkeydown="if(event.key==='Enter') triggerSearchPopUp(this.value)">
+            <div id="search-suggestions" class="hidden"></div>
+        </div>
+
+        <div id="super-admin-reg" class="hidden" style="margin-bottom:20px; display:flex; gap:10px;">
+            <input type="text" id="reg-file-id" class="login-field" style="margin:0; flex:1;" placeholder="File ID">
+            <input type="text" id="reg-file-title" class="login-field" style="margin:0; flex:1;" placeholder="Title">
+            <button onclick="registerBook()" class="btn-sm" style="background:var(--blue); color:white; padding:0 25px;">Register</button>
+        </div>
+        
         <table>
-            <thead><tr><th>Resource</th><th>Access</th><th>Category</th><th>Promo</th><th>Delete</th></tr></thead>
-            <tbody id="resource-list"></tbody>
+            <thead><tr><th>Resource</th><th>Access</th><th>Management</th><th>Delete</th></tr></thead>
+            <tbody id="inventory-list"></tbody>
         </table>
     </div>
 
-    <div id="nom-sec" class="hidden glass-card">
-        <h3>📥 Faculty Nominations</h3>
-        <div id="nom-list"></div>
+    <div id="nom-section" class="hidden glass-card"><h2>📥 Faculty Nominations</h2><div id="nomination-list"></div></div>
+    <div id="mem-section" class="hidden glass-card">
+        <select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px;"><option value="">Select College</option><option value="IMC26">IMC26</option></select>
+        <div id="user-folders-list"></div>
     </div>
+    <div id="stud-section" class="hidden glass-card"><h2>📤 Bulk Registration</h2><textarea id="bulk-input" class="login-field" style="height:150px;" placeholder="Name, CollID, ID, Pass, Role"></textarea><button class="btn-sm" style="background:var(--blue); color:white; width:100%;" onclick="processBulk()">Bulk Upload</button></div>
+</div>
 
-    <div id="mem-sec" class="hidden glass-card">
-        <h3>👥 Member Logs & Activity</h3>
-        <select id="m-coll" class="login-field" style="width:250px;" onchange="loadUsers(this.value)">
-            <option value="">Select College</option>
-            <option value="IMC26">IMC26</option>
-            <option value="ASLIN26">ASLIN26</option>
-        </select>
-        <div id="users-list"></div>
-        <div id="user-details" class="hidden glass-card" style="background:#0f172a; margin-top:20px;"></div>
-    </div>
-
-    <div id="add-sec" class="hidden glass-card">
-        <h3>📤 Bulk Member Upload</h3>
-        <textarea id="bulk-data" class="login-field" style="height:120px;" placeholder="Name, CollegeID, StudentID, Password, Role"></textarea>
-        <button class="btn-sm" style="background:var(--blue); color:white; width:100%; height:45px;" onclick="uploadBulk()">Upload Data</button>
+<div id="search-results-popup" class="hidden">
+    <div class="popup-content">
+        <div class="popup-header">
+            <h3 style="margin:0;">🔎 Search Results</h3>
+            <button class="btn-sm" style="background:#ef4444; color:white;" onclick="closeSearchPopUp()">Close</button>
+        </div>
+        <div class="popup-body">
+            <table>
+                <thead><tr><th>Book Title</th><th>Category & Promo</th><th>Action</th></tr></thead>
+                <tbody id="popup-results-list"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
+    const adminAccounts = { "aslin": "Phlagon@28", "IMC26": "IMC26@theo" };
+    let isSuperAdmin = false; let fullInventory = [];
 
-    function doLogin() {
-        const id = document.getElementById('a-id').value;
-        const ps = document.getElementById('a-pass').value;
-        if ((id === "IMC26" && ps === "IMC26@theo") || (id === "aslin" && ps === "Phlagon@28")) {
+    function handleAdminLogin() {
+        const cid = document.getElementById('admin-coll-id').value.trim();
+        const pass = document.getElementById('admin-pass').value.trim();
+        if (adminAccounts[cid] && adminAccounts[cid] === pass) {
+            isSuperAdmin = (cid === "aslin");
             document.getElementById('auth-overlay').classList.add('hidden');
             document.getElementById('master-panel').classList.remove('hidden');
-            startSync();
-        } else { alert("Invalid Credentials"); }
+            if(isSuperAdmin) document.getElementById('super-admin-reg').classList.remove('hidden');
+            initAdmin();
+        } else { alert("Denied: Wrong Credentials"); }
     }
 
-    function startSync() {
-        // Resources Sync
+    function initAdmin() {
         db.collection("library_settings").onSnapshot(snap => {
-            const list = document.getElementById('resource-list'); list.innerHTML = "";
-            snap.forEach(doc => {
-                const b = doc.data(); const id = doc.id; const allowed = b.allowedColleges || [];
-                list.innerHTML += `<tr>
-                    <td><b>${b.title}</b></td>
-                    <td style="position:relative;"><button class="btn-sm" style="background:var(--purple); color:white;" onclick="toggleD('acc-${id}')">Access</button><div id="acc-${id}" class="dropdown-menu"><div class="drop-item" onclick="toggleColl('${id}','IMC26',${allowed.includes('IMC26')})">IMC26 ${allowed.includes('IMC26')?'✅':''}</div><div class="drop-item" onclick="toggleColl('${id}','ASLIN26',${allowed.includes('ASLIN26')})">ASLIN26 ${allowed.includes('ASLIN26')?'✅':''}</div></div></td>
-                    <td style="position:relative;"><button class="btn-sm" style="background:var(--green); color:white;" onclick="toggleD('cat-${id}')">${b.category || 'Set Category'}</button><div id="cat-${id}" class="dropdown-menu"><div class="drop-item" onclick="upField('${id}','category','Theology')">Theology</div><div class="drop-item" onclick="upField('${id}','category','Church History')">Church History</div></div></td>
-                    <td style="position:relative;"><button class="btn-sm" style="background:var(--orange); color:white;" onclick="toggleD('prm-${id}')">Promo</button><div id="prm-${id}" class="dropdown-menu"><div class="drop-item" onclick="upField('${id}','trending',${!b.trending})">Trending: ${b.trending?'ON':'OFF'}</div><div class="drop-item" onclick="upField('${id}','recent',${!b.recent})">Recent: ${b.recent?'ON':'OFF'}</div></div></td>
-                    <td><button class="btn-sm" style="background:#ef4444; color:white;" onclick="delRes('${id}')">🗑️</button></td>
-                </tr>`;
-            });
+            fullInventory = [];
+            snap.forEach(doc => fullInventory.push({ id: doc.id, ...doc.data() }));
+            renderInventory(fullInventory);
         });
-
-        // Nominations Sync
-        db.collection("faculty_nominations").onSnapshot(snap => {
-            const nl = document.getElementById('nom-list'); nl.innerHTML = snap.empty ? "No Nominations" : "";
-            snap.forEach(doc => { const n = doc.data(); nl.innerHTML += `<div class="user-folder"><span><b>${n.bookTitle}</b> (${n.facultyName})</span><button class="btn-sm" style="background:var(--blue); color:white;" onclick="apprNom('${doc.id}','${n.bookId}','${n.collegeId}')">Approve</button></div>`; });
+        
+        db.collection("faculty_nominations").where("status","==","pending").onSnapshot(snap => {
+            const list = document.getElementById('nomination-list'); list.innerHTML = "";
+            snap.forEach(doc => { const n = doc.data(); list.innerHTML += `<div class="glass-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span><b>${n.bookTitle}</b> (${n.facultyName})</span><button class="btn-sm" style="background:var(--green); color:white;" onclick="approveNom('${doc.id}','${n.bookId}','${n.collegeId}','${n.facultyName}')">Approve</button></div>`; });
         });
     }
 
-    // --- MANAGEMENT & TIMING ---
-    async function loadUsers(cid) {
-        const list = document.getElementById('users-list'); list.innerHTML = "Fetching Members...";
-        const snap = await db.collection("users").where("collegeId", "==", cid).get();
-        list.innerHTML = snap.empty ? "No data found." : "";
-        snap.forEach(doc => {
-            const u = doc.data(); const div = document.createElement('div'); div.className = "user-folder";
-            div.innerHTML = `<span><b>${u.fullName}</b></span> <small>Last Log: ${u.lastLogin || 'Never'}</small>`;
-            div.onclick = () => showMemberDetails(doc.id, u);
-            list.appendChild(div);
+    // SEARCH LOGIC
+    function handleSearchInput(val) {
+        const suggestions = document.getElementById('search-suggestions');
+        if (!val.trim()) { suggestions.classList.add('hidden'); return; }
+        
+        const matches = fullInventory.filter(b => b.title.toLowerCase().includes(val.toLowerCase())).slice(0, 5);
+        if (matches.length === 0) { suggestions.classList.add('hidden'); return; }
+        
+        suggestions.innerHTML = matches.map(m => `<div class="dropdown-item" onclick="triggerSearchPopUp('${m.title}')" style="padding:12px; border-bottom:1px solid var(--border);">${m.title}</div>`).join('');
+        suggestions.classList.remove('hidden');
+    }
+
+    function triggerSearchPopUp(query) {
+        document.getElementById('search-suggestions').classList.add('hidden');
+        const list = document.getElementById('popup-results-list');
+        const results = fullInventory.filter(b => b.title.toLowerCase().includes(query.toLowerCase()));
+        
+        list.innerHTML = results.length ? "" : "<tr><td colspan='3'>No results found</td></tr>";
+        results.forEach(b => {
+            const promo = `
+                <div style="font-size:10px; margin-top:4px;">
+                    ${b.recent ? '<span style="color:var(--orange)">[Recent] </span>' : ''}
+                    ${b.trending ? '<span style="color:var(--purple)">[Trending] </span>' : ''}
+                    ${b.mission ? '<span style="color:var(--green)">[Mission Focus]</span>' : ''}
+                </div>`;
+            list.innerHTML += `<tr>
+                <td><b>${b.title}</b></td>
+                <td><small>${b.category || 'Uncategorized'}</small>${promo}</td>
+                <td><button class="btn-sm" style="background:var(--blue); color:white;" onclick="focusInventoryItem('${b.id}')">View in List</button></td>
+            </tr>`;
+        });
+        document.getElementById('search-results-popup').classList.remove('hidden');
+    }
+
+    function focusInventoryItem(id) {
+        closeSearchPopUp();
+        // The inventory is already rendered, this scrolls it into view if needed
+        const element = document.querySelector(`[onclick*="${id}"]`).closest('tr');
+        element.style.background = "#334155";
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => element.style.background = "transparent", 2000);
+    }
+
+    function closeSearchPopUp() { document.getElementById('search-results-popup').classList.add('hidden'); }
+
+    function renderInventory(data) {
+        const list = document.getElementById('inventory-list'); list.innerHTML = "";
+        data.forEach(b => {
+            const id = b.id; const allowed = b.allowedColleges || [];
+            list.innerHTML += `<tr>
+                <td><b>${b.title}</b><br><small>${b.category || 'Uncategorized'}</small></td>
+                <td><small>${allowed.join(', ') || '🔒'}</small></td>
+                <td style="position:relative;">
+                    <button class="btn-sm" style="background:var(--purple); color:white;" onclick="toggleM('a-${id}')">Access</button>
+                    <div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>
+                    <button class="btn-sm" style="background:var(--green); color:white;" onclick="toggleM('c-${id}')">Category</button>
+                    <div id="c-${id}" class="dropdown-menu">
+                        <div class="dropdown-item" onclick="updateField('${id}','category','Theology')">Systematic Theology</div>
+                        <div class="dropdown-item" onclick="updateField('${id}','category','Church History')">CHURCH History</div>
+                        <div class="dropdown-item" onclick="updateField('${id}','category','Mission')">Mission</div>
+                        <div class="dropdown-item" onclick="updateField('${id}','category','Other Books')">Other Books</div>
+                    </div>
+                    <button class="btn-sm" style="background:var(--orange); color:white;" onclick="toggleM('p-${id}')">Promo</button>
+                    <div id="p-${id}" class="dropdown-menu">
+                        <div class="dropdown-item" onclick="updateField('${id}','recent',${!b.recent})">Recent: ${b.recent?'✅':'OFF'}</div>
+                        <div class="dropdown-item" onclick="updateField('${id}','trending',${!b.trending})">Trending: ${b.trending?'✅':'OFF'}</div>
+                        <div class="dropdown-item" onclick="updateField('${id}','mission',${!b.mission})">Mission Focus: ${b.mission?'✅':'OFF'}</div>
+                    </div>
+                </td>
+                <td><button class="btn-sm" style="background:#ef4444; color:white;" onclick="deletePDF('${id}')">🗑️</button></td>
+            </tr>`;
         });
     }
 
-    function showMemberDetails(uid, u) {
-        const det = document.getElementById('user-details'); det.classList.remove('hidden');
-        const h = Math.floor((u.usageTime || 0)/60); const m = (u.usageTime || 0)%60;
-        det.innerHTML = `
-            <h4>${u.fullName} - Activity Report</h4>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                <div>
-                    <p>🕒 <b>Active Usage:</b> ${h}h ${m}m</p>
-                    <p>📅 <b>Expiry:</b> ${u.expiryDate || 'Not Set'}</p>
-                    <input type="date" id="exp-${uid}" class="login-field" value="${u.expiryDate || ''}" onchange="upFieldUser('${uid}','expiryDate',this.value)">
-                </div>
-                <div>
-                    <label>Assign Role:</label>
-                    <select class="login-field" onchange="upFieldUser('${uid}','role',this.value)"><option value="student" ${u.role==='student'?'selected':''}>Student</option><option value="faculty" ${u.role==='faculty'?'selected':''}>Faculty</option></select>
-                    <button class="btn-sm" style="background:var(--green); color:white; width:100%; height:45px;" onclick="downloadReport('${uid}','${u.fullName}')">📥 DOWNLOAD CSV REPORT</button>
-                </div>
-            </div>`;
-    }
-
-    // --- LOGS & REPORT GENERATOR ---
-    async function downloadReport(uid, name) {
-        const snap = await db.collection("users").doc(uid).collection("activity_logs").orderBy("timestamp", "desc").get();
-        if (snap.empty) { alert("No activity data for this user."); return; }
-        let csv = "Timestamp,Type,Details,SessionDuration\n";
-        snap.forEach(d => { const l = d.data(); csv += `"${l.timestamp}","${l.type}","${l.details || ''}","${l.duration || ''}"\n`; });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `${name}_Activity.csv`; a.click();
-    }
-
-    // --- ACTIONS ---
-    async function uploadBulk() {
-        const lines = document.getElementById('bulk-data').value.split('\n');
-        for(let l of lines) { const p = l.split(',').map(i=>i.trim()); if(p.length === 5) await db.collection("users").add({ fullName:p[0], collegeId:p[1], studentId:p[2], password:p[3], role:p[4], usageTime:0 }); }
-        alert("Members Added Successfully");
-    }
-
-    async function upField(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
-    async function upFieldUser(id, f, v) { await db.collection("users").doc(id).update({ [f]: v }); alert("Updated!"); }
-    async function toggleColl(id, coll, has) { const ref = db.collection("library_settings").doc(id); await ref.update({ allowedColleges: has ? firebase.firestore.FieldValue.arrayRemove(coll) : firebase.firestore.FieldValue.arrayUnion(coll) }); }
-    async function delRes(id) { if(confirm("Delete Resource?")) await db.collection("library_settings").doc(id).delete(); }
-    function toggleD(id) { document.querySelectorAll('.dropdown-menu').forEach(m => { if(m.id !== id) m.classList.remove('show'); }); document.getElementById(id).classList.toggle('show'); }
-    function tab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('t-'+t).classList.add('active'); document.querySelectorAll('.glass-card').forEach(s => s.classList.add('hidden')); document.getElementById(t+'-sec').classList.remove('hidden'); }
+    function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('t-'+t).classList.add('active'); document.querySelectorAll('.glass-card').forEach(s => s.classList.add('hidden')); document.getElementById(t+'-section').classList.remove('hidden'); }
+    function toggleM(id) { const menu = document.getElementById(id); const isShowing = menu.classList.contains('show'); document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show')); if(!isShowing) menu.classList.add('show'); }
+    async function approveNom(docId, bookId, collegeId, facName) { await db.collection("library_settings").doc(bookId).set({ recommendations: { [collegeId]: facName } }, { merge: true }); await db.collection("faculty_nominations").doc(docId).delete(); alert("Approved!"); }
+    async function updateField(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
+    async function toggleAccess(id, coll, has) { const ref = db.collection("library_settings").doc(id); const doc = await ref.get(); let allowed = doc.data().allowedColleges || []; allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll]; await ref.update({ allowedColleges: allowed }); }
+    async function registerBook() { const id = document.getElementById('reg-file-id').value.trim(); const title = document.getElementById('reg-file-title').value.trim(); if(id && title) await db.collection("library_settings").doc(id).set({ title, category: "Theology", allowedColleges: [], mission: false }); alert("Added!"); }
+    async function deletePDF(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
+    async function processBulk() { const lines = document.getElementById('bulk-input').value.split('\n'); for(let l of lines) { const p = l.split(',').map(i=>i.trim()); if(p.length===5) await db.collection("users").add({ fullName:p[0], collegeId:p[1], studentId:p[2], password:p[3], role:p[4].toLowerCase(), createdAt: new Date().toISOString() }); } alert("Done!"); }
 </script>
 </body>
 </html>
