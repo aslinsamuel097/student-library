@@ -20,7 +20,8 @@
         .btn-preview { background: var(--blue); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; margin-top: 10px; }
         #auth-screen, #profile-overlay, #reader-overlay, #full-lib-view, #borrow-view, #search-results-overlay { position: fixed; inset: 0; z-index: 9000; background: var(--bg); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
         .hidden { display: none !important; }
-        .cat-item { cursor: pointer; background: #0f172a; padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 8px; font-size: 13px; }
+        .cat-item { cursor: pointer; background: #0f172a; padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 8px; font-size: 13px; transition: 0.3s; }
+        .cat-item:hover { border-color: var(--blue); background: #1e293b; }
         .time-header { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .time-box { background: var(--card-bg); border: 1px solid var(--border); padding: 10px; border-radius: 15px; text-align: center; }
         .time-label { font-size: 8px; color: var(--text-sub); display: block; text-transform: uppercase; }
@@ -34,18 +35,18 @@
     <div id="auth-screen">
         <div style="background:var(--card-bg); padding:30px; border-radius:24px; text-align:center; max-width:350px; margin:auto; border:1px solid var(--border);">
             <h2 style="color:var(--blue)">TheoLib Login</h2>
-            <select id="login-role" class="login-field"><option value="student">Student Login</option><option value="faculty">Faculty Login</option></select>
+            <select id="login-role" class="login-field"><option value="student">Student</option><option value="faculty">Faculty</option></select>
             <input type="text" id="login-coll-id" class="login-field" placeholder="College ID">
             <input type="text" id="login-user-id" class="login-field" placeholder="User ID">
             <input type="password" id="login-pass" class="login-field" placeholder="Password">
-            <button onclick="handleLogin()" style="background:var(--blue); color:white; border:none; width:100%; padding:15px; border-radius:12px; font-weight:600;">Enter Library</button>
+            <button onclick="handleLogin()" style="background:var(--blue); color:white; border:none; width:100%; padding:15px; border-radius:12px; font-weight:600; cursor:pointer;">Enter Library</button>
         </div>
     </div>
 
     <div id="dashboard" class="hidden">
         <div class="time-header">
             <div id="session-box" class="time-box" style="border-color: var(--green);"><span class="time-label"><span class="status-dot"></span>Session</span><span id="session-clock" class="time-val" style="color: var(--green);">00:00:00</span></div>
-            <div class="time-box"><span class="time-label">Current</span><span id="real-time-clock" class="time-val" style="color: var(--blue);">00:00:00</span></div>
+            <div class="time-box"><span class="time-label">Current Time</span><span id="real-time-clock" class="time-val" style="color: var(--blue);">00:00:00</span></div>
         </div>
 
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:20px;">
@@ -55,7 +56,7 @@
         </div>
 
         <div class="search-container" style="position: relative; margin: 10px 0 20px 0;">
-            <input type="text" id="lib-search" class="login-field" placeholder="🔍 Search book title or category..." oninput="showSuggestions(this.value)" onkeydown="if(event.key==='Enter') triggerSearch()">
+            <input type="text" id="lib-search" class="login-field" placeholder="🔍 Search title or category..." oninput="showSuggestions(this.value)" onkeydown="if(event.key==='Enter') triggerSearch()">
             <div id="search-suggestions" class="hidden" style="position:absolute; top:48px; width:100%; background:var(--card-bg); border:1px solid var(--border); border-radius:10px; z-index:10000; max-height:200px; overflow-y:auto;"></div>
         </div>
 
@@ -77,25 +78,23 @@
         </div>
     </div>
 
+    <div id="full-lib-view" class="hidden"><div style="display:flex; justify-content:space-between; align-items:center;"><h3>📚 Library</h3><button onclick="closeView('full-lib-view')" class="btn-preview">Back</button></div><div id="full-book-list"></div></div>
+    <div id="borrow-view" class="hidden"><div style="display:flex; justify-content:space-between; align-items:center;"><h3>📥 Borrowed</h3><button onclick="closeView('borrow-view')" class="btn-preview">Back</button></div><div id="borrow-list"></div></div>
     <div id="search-results-overlay" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3>🔎 Search Results</h3><button onclick="closeSearchView()" class="btn-preview">Back</button></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3>🔎 Results</h3><button onclick="closeSearchView()" class="btn-preview">Back</button></div>
         <div id="search-results-list"></div>
     </div>
-
-    <div id="full-lib-view" class="hidden"><div style="display:flex; justify-content:space-between; align-items:center;"><h3>📚 All Books</h3><button onclick="closeView('full-lib-view')" class="btn-preview">Back</button></div><div id="full-book-list"></div></div>
-    
-    <div id="borrow-view" class="hidden"><div style="display:flex; justify-content:space-between; align-items:center;"><h3>📥 My Borrowed</h3><button onclick="closeView('borrow-view')" class="btn-preview">Back</button></div><div id="borrow-list"></div></div>
     
     <div id="reader-overlay" class="hidden">
         <div style="background:#1e293b; padding:15px; display:flex; justify-content:space-between; align-items:center; color:white;"><span id="reader-title">Reader</span><button onclick="closeReader()" style="background:red; border:none; color:white; padding:8px 15px; border-radius:8px;">Exit</button></div>
         <div style="display:flex; height:calc(100vh - 60px);">
             <iframe id="pdf-frame" style="flex:3; height:100%; border:none;"></iframe>
             <div style="flex:1; background:var(--card-bg); border-left:1px solid var(--border); padding:15px; overflow-y:auto;">
-                <h4 style="margin-top:0;">📂 Quick Nav</h4>
-                <div class="cat-item" onclick="closeReader(); showFullLibrary()">All Library</div>
-                <div class="cat-item" onclick="closeReader(); showBorrowView()">My Borrowed</div>
+                <h4 style="margin-top:0;">📂 Navigation</h4>
+                <div class="cat-item" onclick="closeReader(); showFullLibrary()">All Books</div>
+                <div class="cat-item" onclick="closeReader(); showBorrowView()">My Issued</div>
                 <hr style="border-color:var(--border)">
-                <p style="font-size:10px; color:var(--text-sub)">Tracking: Active</p>
+                <p style="font-size:10px; color:var(--text-sub)">Active Tracking...</p>
             </div>
         </div>
     </div>
@@ -103,7 +102,7 @@
     <div id="profile-overlay" class="hidden">
         <div class="glass-card" style="max-width:350px; margin:auto; text-align:center;">
             <h2 id="prof-name">Name</h2><p id="p-role" style="color:var(--blue); font-weight:800;"></p>
-            <div style="text-align:left; margin-top:15px;">
+            <div style="text-align:left; margin-top:15px; font-size:14px;">
                 <p><b>College ID:</b> <span id="p-coll-id"></span></p>
                 <p><b>Student ID:</b> <span id="p-stud-id"></span></p>
             </div>
@@ -129,7 +128,7 @@
                 currentUser = { uid: snap.docs[0].id, ...snap.docs[0].data() };
                 document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden');
                 init();
-            } else { alert("Error"); }
+            } else { alert("Login Failed"); }
         }
 
         function init() {
@@ -149,12 +148,12 @@
 
         function load() {
             db.collection("library_settings").where("allowedColleges","array-contains",currentUser.collegeId).onSnapshot(snap => {
-                const rec = document.getElementById('recent-list'); const mis = document.getElementById('mission-list'); const ful = document.getElementById('full-book-list');
-                rec.innerHTML = ""; mis.innerHTML = ""; ful.innerHTML = ""; collegeBooks = [];
+                const rec = document.getElementById('recent-list'); const mis = document.getElementById('mission-list');
+                rec.innerHTML = ""; mis.innerHTML = ""; collegeBooks = [];
                 snap.forEach(doc => {
                     const b = doc.data(); collegeBooks.push({id: doc.id, ...b});
                     const html = `<div class="book-item"><b>${b.title}</b><div style="display:flex; gap:5px;"><button class="btn-preview" onclick="openPdf('${doc.id}', '${b.title}')">Preview</button><button class="btn-preview" style="background:#475569" onclick="borrow('${doc.id}','${b.title}')">Borrow</button></div></div>`;
-                    rec.innerHTML += html; ful.innerHTML += html; if(b.mission) mis.innerHTML += html;
+                    rec.innerHTML += html; if(b.mission) mis.innerHTML += html;
                 });
                 document.getElementById('top-total').innerText = snap.size;
             });
@@ -168,23 +167,45 @@
             });
         }
 
+        // CATEGORY FILTER FIX: Clears list and adds only matching books
+        function loadCat(cat) { 
+            const list = document.getElementById('full-book-list'); 
+            list.innerHTML = ""; 
+            const filtered = collegeBooks.filter(b => b.category === cat);
+            if(filtered.length === 0) { list.innerHTML = "<p>No books in this category.</p>"; }
+            filtered.forEach(b => { 
+                list.innerHTML += `<div class="book-item"><b>${b.title}</b><br><button class="btn-preview" onclick="openPdf('${b.id}','${b.title}')">Preview</button></div>`; 
+            }); 
+            showFullLibrary(); 
+        }
+
+        function showFullLibrary() { 
+            const list = document.getElementById('full-book-list');
+            // Only populate if empty (meaning All Books was clicked, not a category)
+            if(list.innerHTML === "") {
+                collegeBooks.forEach(b => {
+                    list.innerHTML += `<div class="book-item"><b>${b.title}</b><div style="display:flex; gap:5px;"><button class="btn-preview" onclick="openPdf('${b.id}', '${b.title}')">Preview</button></div></div>`;
+                });
+            }
+            document.getElementById('full-lib-view').classList.remove('hidden'); 
+        }
+
         function showSuggestions(val) {
             const box = document.getElementById('search-suggestions');
             if (!val.trim()) { box.classList.add('hidden'); return; }
             const filtered = collegeBooks.filter(b => b.title.toLowerCase().includes(val.toLowerCase()));
-            if (filtered.length === 0) { box.classList.add('hidden'); return; }
             box.innerHTML = filtered.map(b => `<div style="padding:12px; border-bottom:1px solid var(--border); cursor:pointer; background:#1e293b;" onclick="triggerSearch('${b.title}')">${b.title}</div>`).join('');
             box.classList.remove('hidden');
         }
 
-        function triggerSearch(specificTitle) {
-            const query = (specificTitle || document.getElementById('lib-search').value).toLowerCase();
+        function triggerSearch(title) {
+            const query = (title || document.getElementById('lib-search').value).toLowerCase();
             document.getElementById('search-suggestions').classList.add('hidden');
             const results = collegeBooks.filter(b => b.title.toLowerCase().includes(query));
             const list = document.getElementById('search-results-list');
             list.innerHTML = results.length ? "" : "<p>No matches found.</p>";
             results.forEach(b => {
-                list.innerHTML += `<div class="book-item"><b>${b.title}</b><br><small>${b.category}</small><div style="display:flex; gap:10px; margin-top:10px;"><button class="btn-preview" onclick="openPdf('${b.id}','${b.title}')">Read</button><button class="btn-preview" style="background:#475569" onclick="borrow('${b.id}','${b.title}')">Borrow</button></div></div>`;
+                list.innerHTML += `<div class="book-item"><b>${b.title}</b><br><small>${b.category || ''}</small><div style="display:flex; gap:10px; margin-top:10px;"><button class="btn-preview" onclick="openPdf('${b.id}','${b.title}')">Read</button></div></div>`;
             });
             document.getElementById('search-results-overlay').classList.remove('hidden');
         }
@@ -192,33 +213,18 @@
         function openPdf(id, title) { curAct = "Online Reading"; curBook = title; document.getElementById('reader-title').innerText = title; document.getElementById('pdf-frame').src = `https://docs.google.com/viewer?url=${window.location.origin}/public/${id}_read_online.pdf&embedded=true`; document.getElementById('reader-overlay').classList.remove('hidden'); }
         function openBorrowedPdf(id, title) { curAct = "Full Reading"; curBook = title; document.getElementById('reader-title').innerText = title; document.getElementById('pdf-frame').src = `https://docs.google.com/viewer?url=${window.location.origin}/public/${id}.pdf&embedded=true`; document.getElementById('reader-overlay').classList.remove('hidden'); }
         function closeReader() { document.getElementById('reader-overlay').classList.add('hidden'); document.getElementById('pdf-frame').src = ""; curAct = "Active Session"; curBook = ""; }
-        function loadCat(cat) { 
-            const list = document.getElementById('full-book-list'); list.innerHTML = ""; 
-            const filtered = collegeBooks.filter(b => b.category === cat);
-            filtered.forEach(b => { list.innerHTML += `<div class="book-item"><b>${b.title}</b><br><button class="btn-preview" onclick="openPdf('${b.id}','${b.title}')">Preview</button></div>`; }); 
-            showFullLibrary(); 
-        }
         async function borrow(id, t) { if(prompt("Code:") === "BORROW2026") await db.collection("borrows").add({ userId: currentUser.uid, bookId: id, title: t, borrowedAt: new Date().toISOString() }); }
         
-        // PROFILE FIXED: Displays both College and Student ID
         function toggleProfile() { 
             document.getElementById('prof-name').innerText = currentUser.fullName; 
-            document.getElementById('p-role').innerText = currentUser.role.toUpperCase();
-            document.getElementById('p-coll-id').innerText = currentUser.collegeId; 
-            document.getElementById('p-stud-id').innerText = currentUser.studentId;
+            document.getElementById('p-role').innerText = (currentUser.role || 'STUDENT').toUpperCase();
+            document.getElementById('p-coll-id').innerText = currentUser.collegeId || 'N/A'; 
+            document.getElementById('p-stud-id').innerText = currentUser.studentId || 'N/A';
             document.getElementById('profile-overlay').classList.toggle('hidden'); 
         }
 
-        function showFullLibrary() { 
-            const list = document.getElementById('full-book-list'); 
-            list.innerHTML = ""; // Reset before loading all
-            collegeBooks.forEach(b => {
-                list.innerHTML += `<div class="book-item"><b>${b.title}</b><div style="display:flex; gap:5px;"><button class="btn-preview" onclick="openPdf('${b.id}', '${b.title}')">Preview</button></div></div>`;
-            });
-            document.getElementById('full-lib-view').classList.remove('hidden'); 
-        }
         function showBorrowView() { document.getElementById('borrow-view').classList.remove('hidden'); }
-        function closeView(id) { document.getElementById(id).classList.add('hidden'); }
+        function closeView(id) { document.getElementById(id).classList.add('hidden'); if(id === 'full-lib-view') document.getElementById('full-book-list').innerHTML = ""; }
         function closeSearchView() { document.getElementById('search-results-overlay').classList.add('hidden'); }
     </script>
 </body>
