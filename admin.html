@@ -126,7 +126,6 @@
         }); 
     }
 
-    // --- TIME FORMATTING (HH:MM:SS) ---
     function fmt(s) {
         const h = Math.floor(s / 3600);
         const m = Math.floor((s % 3600) / 60);
@@ -147,55 +146,40 @@
 
     async function fetchUsageData() {
         if(!activeUID) return;
-        const logs = await db.collection("activity_logs").where("userId", "==", activeUID).orderBy("timestamp", "desc").get(); 
-        let totalSec = 0; let borrowSec = 0; let logHtml = "";
-        
-        logs.forEach(l => { 
-            const d = l.data(); 
-            const dur = parseInt(d.duration) || 0;
-            totalSec += dur; 
-            if(d.activityType.includes("Full Reading")) borrowSec += dur;
-            logHtml += `<tr><td>${new Date(d.timestamp).toLocaleDateString()}</td><td>${d.activityType}</td><td>${fmt(dur)}</td></tr>`; 
+        db.collection("activity_logs").where("userId", "==", activeUID).orderBy("timestamp", "desc").limit(100).get().then((logs) => {
+            let totalSec = 0; let borrowSec = 0; let logHtml = "";
+            logs.forEach(l => { 
+                const d = l.data(); 
+                const dur = parseInt(d.duration) || 0;
+                totalSec += dur; 
+                if(d.activityType && d.activityType.includes("Full Reading")) borrowSec += dur;
+                logHtml += `<tr><td>${new Date(d.timestamp).toLocaleString()}</td><td>${d.activityType}</td><td>${fmt(dur)}</td></tr>`; 
+            });
+            document.getElementById('modal-stats').innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat-box"><span>TOTAL USAGE</span><br><b class="stat-val">${fmt(totalSec)}</b></div>
+                    <div class="stat-box"><span>BORROWED TIME</span><br><b class="stat-val">${fmt(borrowSec)}</b></div>
+                </div>`; 
+            document.getElementById('log-body').innerHTML = logHtml;
         });
-
-        document.getElementById('modal-stats').innerHTML = `
-            <div class="stat-grid">
-                <div class="stat-box"><span>TOTAL USAGE</span><br><b class="stat-val">${fmt(totalSec)}</b></div>
-                <div class="stat-box"><span>BORROWED TIME</span><br><b class="stat-val">${fmt(borrowSec)}</b></div>
-            </div>`; 
-        document.getElementById('log-body').innerHTML = logHtml;
     }
 
     async function downloadCSV() {
         const logs = await db.collection("activity_logs").where("userId", "==", activeUID).orderBy("timestamp", "desc").get();
         let totalSec = 0; let borrowSec = 0; let logRows = "";
-        
         logs.forEach(l => { 
-            const d = l.data(); 
-            const dur = parseInt(d.duration) || 0;
-            totalSec += dur;
-            if(d.activityType.includes("Full Reading")) borrowSec += dur;
+            const d = l.data(); const dur = parseInt(d.duration) || 0;
+            totalSec += dur; if(d.activityType.includes("Full Reading")) borrowSec += dur;
             logRows += `${new Date(d.timestamp).toLocaleString()},"${d.activityType}",${fmt(dur)}\n`;
         });
-
         let csv = `Report: ${activeUser.fullName}\nTotal Usage,${fmt(totalSec)}\nBorrowed Reading,${fmt(borrowSec)}\n\nDate,Activity,Duration\n${logRows}`;
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `${activeUser.fullName}_Report.csv`; a.click();
     }
 
-    function closeModal() {
-        document.getElementById('user-modal').classList.add('hidden');
-        if(refreshInterval) clearInterval(refreshInterval);
-        activeUID = "";
-    }
-
-    async function updateUserRole() {
-        const newRole = document.getElementById('role-select').value;
-        await db.collection("users").doc(activeUID).update({ role: newRole });
-        alert("Updated!");
-    }
-
+    function closeModal() { document.getElementById('user-modal').classList.add('hidden'); if(refreshInterval) clearInterval(refreshInterval); activeUID = ""; }
+    async function updateUserRole() { const newRole = document.getElementById('role-select').value; await db.collection("users").doc(activeUID).update({ role: newRole }); alert("Updated!"); }
     function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === 't-'+t)); document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', s.id !== t+'-section')); }
     function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => m.id !== id ? m.classList.remove('show') : null); document.getElementById(id).classList.toggle('show'); }
     async function updateField(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
