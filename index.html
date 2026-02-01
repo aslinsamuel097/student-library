@@ -18,7 +18,7 @@
         .btn-preview { background: var(--blue); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; margin-top: 5px; }
         #auth-screen, #profile-overlay, #reader-overlay, #full-lib-view, #borrow-view, #search-results-overlay, .full-modal { position: fixed; inset: 0; z-index: 9000; background: var(--bg); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
         .hidden { display: none !important; }
-        .cat-item { cursor: pointer; background: #0f172a; padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 8px; font-size: 13px; text-align: center; }
+        .cat-item { cursor: pointer; background: #0f172a; padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 8px; font-size: 13px; text-align: center; font-weight: 600; }
         .time-header { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .time-box { background: var(--card-bg); border: 1px solid var(--border); padding: 10px; border-radius: 15px; text-align: center; }
         .time-val { font-family: monospace; font-weight: 800; font-size: 16px; }
@@ -35,7 +35,7 @@
             <input type="text" id="login-coll-id" class="login-field" placeholder="College ID">
             <input type="text" id="login-user-id" class="login-field" placeholder="User ID">
             <input type="password" id="login-pass" class="login-field" placeholder="Password">
-            <button onclick="handleLogin()" style="background:var(--blue); color:white; border:none; width:100%; padding:15px; border-radius:12px; font-weight:600;">Enter Library</button>
+            <button onclick="handleLogin()" style="background:var(--blue); color:white; border:none; width:100%; padding:15px; border-radius:12px; font-weight:600; cursor:pointer;">Enter Library</button>
         </div>
     </div>
 
@@ -53,35 +53,19 @@
 
         <div style="display:grid; grid-template-columns: 2fr 1.2fr; gap: 15px;">
             <div>
-                <input type="text" id="lib-search" class="login-field" placeholder="🔍 Search title or category..." oninput="showSug(this.value)">
+                <input type="text" id="lib-search" class="login-field" placeholder="🔍 Search library..." oninput="showSug(this.value)">
                 <div id="search-suggestions" class="hidden glass-card" style="position:absolute; z-index:10000; width:50%; max-height:200px; overflow-y:auto;"></div>
 
                 <div class="glass-card"><h3>📚 Categories</h3>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                         <div class="cat-item" onclick="loadCat('Theology')">📖 Theology</div>
-                        <div class="cat-item" onclick="loadCat('Church History')">⛪ History</div>
+                        <div class="cat-item" onclick="loadCat('History')">⛪ History</div>
                         <div class="cat-item" onclick="loadCat('Mission')">🌍 Mission</div>
                         <div class="cat-item" onclick="loadCat('Bible Intro')">📘 Bible</div>
                     </div>
                 </div>
-
-                <div class="glass-card">
-                    <h3 style="margin-top:0; color:var(--green);">🕒 Recently Added</h3>
-                    <div id="recent-list"></div>
-                </div>
-
-                <div class="glass-card">
-                    <h3 style="margin-top:0; color:var(--purple);">🔥 Trending</h3>
-                    <div id="trending-list"></div>
-                </div>
-                
-                <div class="glass-card" style="border-color: var(--orange);">
-                    <h3 style="margin-top:0; color:var(--orange);">📖 Request a Book</h3>
-                    <input type="text" id="req-book" placeholder="Book Name (Mandatory)" class="login-field">
-                    <input type="text" id="req-author" placeholder="Author Name (Optional)" class="login-field">
-                    <input type="text" id="req-pub" placeholder="Publisher (Optional)" class="login-field">
-                    <button class="btn-preview" style="background:var(--orange); width:100%;" onclick="submitRequest()">Submit Request</button>
-                </div>
+                <div class="glass-card"><h3>🕒 Recently Added</h3><div id="recent-list"></div></div>
+                <div class="glass-card"><h3>🔥 Trending</h3><div id="trending-list"></div></div>
             </div>
 
             <div>
@@ -89,6 +73,13 @@
                     <h4 style="margin:0; color:var(--purple);">💡 Suggestions</h4>
                     <textarea id="feat-suggest" style="height:100px; margin-top:10px;" placeholder="Required features..."></textarea>
                     <button class="btn-preview" style="background:var(--purple); width:100%;" onclick="submitSuggestion()">Send</button>
+                </div>
+
+                <div class="glass-card" style="border-color: var(--orange);">
+                    <h3 style="margin-top:0; color:var(--orange);">📖 Request a Book</h3>
+                    <input type="text" id="req-book" placeholder="Book Name (Mandatory)" class="login-field">
+                    <input type="text" id="req-author" placeholder="Author (Optional)" class="login-field">
+                    <button class="btn-preview" style="background:var(--orange); width:100%;" onclick="submitRequest()">Submit Request</button>
                 </div>
 
                 <div class="glass-card">
@@ -99,50 +90,20 @@
         </div>
     </div>
 
-    <div id="borrow-view" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;"><h3>📥 Issued Books</h3><button onclick="closeView('borrow-view')" class="btn-preview">Back</button></div>
-        <div id="borrow-list"></div>
+    <div id="reader-overlay" class="hidden">
+        <div style="background:#1e293b; padding:15px; display:flex; justify-content:space-between; align-items:center;"> 
+            <span id="reader-title"></span> 
+            <button onclick="closeReader()" style="background:red; color:white; border:none; padding:8px 12px; border-radius:5px;">Exit</button> 
+        </div> 
+        <iframe id="pdf-frame" style="width:100%; height:100%; border:none;"></iframe>
     </div>
-    
-    <div id="search-results-overlay" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;"><h3>🔎 Search Results</h3><button onclick="closeView('search-results-overlay')" class="btn-preview">Back</button></div>
-        <div id="search-results-list"></div>
-    </div>
-
-    <div id="contact-modal" class="full-modal hidden">
-        <div class="glass-card" style="max-width:400px; margin:auto;">
-            <h2 style="color:var(--blue)">Helpdesk</h2>
-            <input type="text" id="con-coll" placeholder="College Name" class="login-field">
-            <input type="text" id="con-num" placeholder="College Number" class="login-field">
-            <input type="text" id="con-admin" placeholder="College Admin Name" class="login-field">
-            <textarea id="con-msg" placeholder="Enter your message here..." style="height:100px;"></textarea>
-            <button class="btn-preview" style="width:100%; padding:15px;" onclick="submitContact()">Send Message</button>
-            <button class="btn-preview" style="background:none; border:1px solid var(--border); width:100%; margin-top:10px;" onclick="closeContactModal()">Cancel</button>
-        </div>
-    </div>
-
-    <div id="profile-overlay" class="hidden">
-        <div class="glass-card" style="max-width:350px; margin:auto; text-align:center;">
-            <h2 id="prof-name">Name</h2>
-            <div style="background:var(--blue); display:inline-block; padding:5px 15px; border-radius:20px; font-size:11px; font-weight:800; margin-bottom:15px;" id="prof-role">ROLE</div>
-            <div style="text-align:left; font-size:12px; margin-bottom:20px;">
-                <p><b>Coll ID:</b> <span id="p-coll-id"></span></p>
-                <p><b>User ID:</b> <span id="p-stud-id"></span></p>
-            </div>
-            <button onclick="toggleProfile()" class="btn-preview">Back</button>
-            <button onclick="handleLogout()" style="background:red; margin-top:10px; width:100%;" class="btn-preview">Logout</button>
-        </div>
-    </div>
-
-    <div id="full-lib-view" class="hidden"><h3>📚 All Books</h3><div id="full-book-list"></div><button onclick="closeView('full-lib-view')" class="btn-preview">Back</button></div>
-    <div id="reader-overlay" class="hidden"><div style="background:#1e293b; padding:15px; display:flex; justify-content:space-between; align-items:center;"> <span id="reader-title"></span> <button onclick="closeReader()" style="background:red; color:white; border:none; padding:8px 12px; border-radius:5px;">Exit</button> </div> <iframe id="pdf-frame" style="width:100%; height:100%; border:none;"></iframe></div>
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
         let currentUser = null; let collegeBooks = []; let sessionSeconds = 0; let isActive = true;
 
-        // PAUSE LOGIC
+        // PAUSE LOGIC: Stop timer when tab is hidden
         document.addEventListener("visibilitychange", () => {
             isActive = !document.hidden;
             document.getElementById('session-box').classList.toggle('paused', !isActive);
@@ -161,11 +122,25 @@
         }
 
         function initSystem() { 
-            setInterval(() => { if(isActive) { sessionSeconds++; updCl('session-clock', sessionSeconds); } }, 1000);
-            setInterval(() => { document.getElementById('real-time-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+            // Corrected timer: only one interval, ticks only if isActive
+            setInterval(() => { 
+                if(isActive) {
+                    sessionSeconds++; 
+                    updCl('session-clock', sessionSeconds); 
+                }
+            }, 1000);
+            setInterval(() => { 
+                document.getElementById('real-time-clock').innerText = new Date().toLocaleTimeString(); 
+            }, 1000);
             load(); 
         }
-        function updCl(id, s) { const h = Math.floor(s/3600).toString().padStart(2,'0'), m = Math.floor((s%3600)/60).toString().padStart(2,'0'), sec = (s%60).toString().padStart(2,'0'); document.getElementById(id).innerText = `${h}:${m}:${sec}`; }
+
+        function updCl(id, s) { 
+            const h = Math.floor(s/3600).toString().padStart(2,'0'), 
+                  m = Math.floor((s%3600)/60).toString().padStart(2,'0'), 
+                  sec = (s%60).toString().padStart(2,'0'); 
+            document.getElementById(id).innerText = `${h}:${m}:${sec}`; 
+        }
 
         function load() {
             db.collection("library_settings").where("allowedColleges","array-contains",currentUser.collegeId).onSnapshot(snap => {
@@ -173,12 +148,8 @@
                 const recList = document.getElementById('recent-list');
                 const trendList = document.getElementById('trending-list');
                 recList.innerHTML = ""; trendList.innerHTML = "";
-
                 snap.forEach(doc => { 
-                    const b = doc.data(); 
-                    const bookData = {id: doc.id, ...b};
-                    collegeBooks.push(bookData); 
-                    
+                    const b = doc.data(); const bookData = {id: doc.id, ...b}; collegeBooks.push(bookData); 
                     const html = `<div class="book-item"><b>${b.title}</b><br><button class="btn-preview" onclick="openPdf('${doc.id}','${b.title}')">Read Preview</button></div>`;
                     recList.innerHTML += html;
                     if(b.recent) trendList.innerHTML += html;
@@ -186,15 +157,8 @@
                 document.getElementById('top-total').innerText = collegeBooks.length;
             });
 
-            // CORRECTED ISSUE TAB LOGIC
             db.collection("borrows").where("userId","==",currentUser.uid).onSnapshot(snap => {
-                const bList = document.getElementById('borrow-list');
-                bList.innerHTML = "";
                 document.getElementById('top-issued').innerText = snap.size;
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    bList.innerHTML += `<div class="book-item"><b>${d.title}</b><br><small>Issued: ${new Date(d.date).toLocaleDateString()}</small><br><button class="btn-preview" onclick="openPdf('${d.bookId}','${d.title}')">Read Full Book</button></div>`;
-                });
             });
         }
 
@@ -206,34 +170,6 @@
             sug.classList.remove('hidden');
         }
 
-        function triggerSearch(title) {
-            document.getElementById('search-suggestions').classList.add('hidden');
-            const resList = document.getElementById('search-results-list');
-            resList.innerHTML = "";
-            collegeBooks.filter(b => b.title === title).forEach(b => {
-                resList.innerHTML += `<div class="book-item"><b>${b.title}</b><br><button class="btn-preview" onclick="openPdf('${b.id}','${b.title}')">Read Preview</button></div>`;
-            });
-            document.getElementById('search-results-overlay').classList.remove('hidden');
-        }
-
-        function loadCat(catName) {
-            const list = document.getElementById('full-book-list');
-            list.innerHTML = "";
-            collegeBooks.filter(b => b.category === catName).forEach(b => {
-                list.innerHTML += `<div class="book-item"><b>${b.title}</b><br><button class="btn-preview" onclick="openPdf('${b.id}','${b.title}')">Read Preview</button></div>`;
-            });
-            document.getElementById('full-lib-view').classList.remove('hidden');
-        }
-
-        function showFullLibrary() {
-            const list = document.getElementById('full-book-list');
-            list.innerHTML = "";
-            collegeBooks.forEach(b => {
-                list.innerHTML += `<div class="book-item"><b>${b.title}</b><br><button class="btn-preview" onclick="openPdf('${b.id}','${b.title}')">Preview</button></div>`;
-            });
-            document.getElementById('full-lib-view').classList.remove('hidden');
-        }
-
         async function submitRequest() {
             const b = document.getElementById('req-book').value.trim();
             if(!b) { alert("Book name is mandatory"); return; }
@@ -241,34 +177,10 @@
             alert("Request sent!"); document.getElementById('req-book').value = "";
         }
 
-        async function submitSuggestion() {
-            const s = document.getElementById('feat-suggest').value.trim();
-            if(!s) return;
-            await db.collection("admin_messages").add({ type: "Suggestion", message: s, user: currentUser.fullName, date: Date.now() });
-            alert("Sent!"); document.getElementById('feat-suggest').value = "";
-        }
-
-        async function submitContact() {
-            const m = document.getElementById('con-msg').value.trim();
-            if(!m) return;
-            await db.collection("admin_messages").add({ type: "Helpdesk", college: document.getElementById('con-coll').value, message: m, user: currentUser.fullName, date: Date.now() });
-            alert("Sent!"); closeContactModal();
-        }
-
-        function toggleProfile() {
-            document.getElementById('prof-name').innerText = currentUser.fullName;
-            document.getElementById('prof-role').innerText = (currentUser.role || "student").toUpperCase();
-            document.getElementById('p-coll-id').innerText = currentUser.collegeId;
-            document.getElementById('p-stud-id').innerText = currentUser.studentId;
-            document.getElementById('profile-overlay').classList.toggle('hidden');
-        }
-
         function openPdf(id, title) { document.getElementById('reader-title').innerText = title; document.getElementById('pdf-frame').src = `/public/${id}_read_online.pdf`; document.getElementById('reader-overlay').classList.remove('hidden'); }
-        function closeReader() { document.getElementById('reader-overlay').classList.add('hidden'); }
+        function closeReader() { document.getElementById('reader-overlay').classList.add('hidden'); document.getElementById('pdf-frame').src = ""; }
         function showContactModal() { document.getElementById('contact-modal').classList.remove('hidden'); }
         function closeContactModal() { document.getElementById('contact-modal').classList.add('hidden'); }
-        function showBorrowView() { document.getElementById('borrow-view').classList.remove('hidden'); }
-        function closeView(id) { document.getElementById(id).classList.add('hidden'); }
         function handleLogout() { location.reload(); }
     </script>
 </body>
