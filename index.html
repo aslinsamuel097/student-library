@@ -23,6 +23,8 @@
         .time-val { font-family: monospace; font-weight: 800; font-size: 16px; }
         .status-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; display: inline-block; margin-right: 5px; }
         .paused .status-dot { background: #ef4444; }
+        .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .cat-item { cursor: pointer; background: #162033; padding: 10px; border-radius: 10px; border: 1px solid var(--border); font-size: 12px; text-align: center; }
     </style>
 </head>
 <body>
@@ -33,14 +35,14 @@
             <input type="text" id="login-coll-id" class="login-field" placeholder="College ID">
             <input type="text" id="login-user-id" class="login-field" placeholder="User ID">
             <input type="password" id="login-pass" class="login-field" placeholder="Password">
-            <button onclick="handleLogin()" style="background:var(--blue); color:white; border:none; width:100%; padding:15px; border-radius:12px; font-weight:600;">Enter</button>
+            <button onclick="handleLogin()" style="background:var(--blue); color:white; border:none; width:100%; padding:15px; border-radius:12px; font-weight:600;">Enter Library</button>
         </div>
     </div>
 
     <div id="dashboard" class="hidden">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-            <div id="session-box" class="time-box" style="border-color: var(--green);"><span>Session</span><br><span id="session-clock" class="time-val" style="color: var(--green);">00:00:00</span></div>
-            <div class="time-box"><span>Current</span><br><span id="real-time-clock" class="time-val" style="color: var(--blue);">00:00:00</span></div>
+        <div class="time-header" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+            <div id="session-box" class="time-box" style="border-color: var(--green);"><span><span class="status-dot"></span>Session</span><br><span id="session-clock" class="time-val" style="color: var(--green);">00:00:00</span></div>
+            <div class="time-box"><span>Current Time</span><br><span id="real-time-clock" class="time-val" style="color: var(--blue);">00:00:00</span></div>
         </div>
 
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:20px;">
@@ -49,12 +51,39 @@
             <div class="stat-card" style="background:var(--purple)" onclick="toggleProfile()"><h4>Profile</h4><p>U</p></div>
         </div>
 
-        <div class="glass-card">
-            <h3>📖 Books</h3>
-            <div id="book-list"></div>
+        <div style="display:grid; grid-template-columns: 2fr 1.2fr; gap: 15px;">
+            <div>
+                <input type="text" id="lib-search" class="login-field" placeholder="🔍 Search library..." oninput="showSug(this.value)">
+                <div class="glass-card">
+                    <h3>📚 Categories</h3>
+                    <div class="cat-grid">
+                        <div class="cat-item" onclick="loadCat('Theology')">Theology</div>
+                        <div class="cat-item" onclick="loadCat('History')">History</div>
+                        <div class="cat-item" onclick="loadCat('Mission')">Mission</div>
+                        <div class="cat-item" onclick="loadCat('Bible')">Bible</div>
+                    </div>
+                </div>
+                <div class="glass-card"><h3>🔥 Trending</h3><div id="trending-list"></div></div>
+            </div>
+            <div>
+                <div class="glass-card"><h4>📞 Helpdesk</h4><button class="btn-preview" style="width:100%;" onclick="showContactModal()">Contact Us</button></div>
+                <div class="glass-card" style="border-color: var(--orange);">
+                    <h4>📖 Request</h4>
+                    <input type="text" id="req-book" placeholder="Book Name" class="login-field">
+                    <button class="btn-preview" style="background:var(--orange); width:100%;" onclick="submitRequest()">Submit</button>
+                </div>
+            </div>
         </div>
     </div>
 
+    <div id="full-lib-view" class="hidden"><h3>📚 Library</h3><div id="full-book-list"></div><button onclick="closeView('full-lib-view')" class="btn-preview">Back</button></div>
+    <div id="profile-overlay" class="hidden">
+        <div class="glass-card" style="max-width:350px; margin:auto; text-align:center;">
+            <h2 id="prof-name"></h2><p id="prof-role" style="font-weight:800; color:var(--blue)"></p>
+            <button onclick="toggleProfile()" class="btn-preview">Back</button>
+            <button onclick="handleLogout()" style="background:red; margin-top:10px;" class="btn-preview">Logout</button>
+        </div>
+    </div>
     <div id="reader-overlay" class="hidden"><div style="background:#1e293b; padding:15px; display:flex; justify-content:space-between;"><span id="reader-title"></span><button onclick="closeReader()" style="background:red; color:white; border:none; padding:8px 12px; border-radius:5px;">Exit</button></div><iframe id="pdf-frame" style="width:100%; height:100%; border:none;"></iframe></div>
 
     <script>
@@ -63,8 +92,10 @@
         let currentUser = null; let sessionSeconds = 0; let isActive = true;
         let trackingState = { activeDocId: null, type: "Total App Usage", title: "Login Session" };
 
+        // 1. PAUSE LOGIC
         document.addEventListener("visibilitychange", async () => {
             isActive = !document.hidden;
+            document.getElementById('session-box').classList.toggle('paused', !isActive);
             if (!isActive) await stopTracking();
             else if (currentUser) await startTracking(trackingState.type, trackingState.title);
         });
@@ -83,25 +114,28 @@
             setInterval(() => { if(isActive) { sessionSeconds++; document.getElementById('session-clock').innerText = new Date(sessionSeconds * 1000).toISOString().substr(11, 8); } }, 1000);
             setInterval(() => { document.getElementById('real-time-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
             db.collection("library_settings").where("allowedColleges","array-contains",currentUser.collegeId).onSnapshot(snap => {
-                const list = document.getElementById('book-list'); list.innerHTML = "";
+                const list = document.getElementById('trending-list'); list.innerHTML = "";
                 snap.forEach(doc => { 
-                    const b = doc.data(); 
+                    const b = doc.data();
                     list.innerHTML += `<div class="book-item"><b>${b.title}</b><br><button class="btn-preview" onclick="openPdf('${doc.id}','${b.title}')">Read</button> <button class="btn-preview" style="background:var(--orange)" onclick="borrowBook('${doc.id}','${b.title}')">Borrow</button></div>`;
                 });
                 document.getElementById('top-total').innerText = snap.size;
             });
         }
 
+        // 2. TRACKING LOGIC
         async function startTracking(type, title) {
             const log = await db.collection("activity_logs").add({ userId: currentUser.uid, type: type, startTime: Date.now(), endTime: null, activity: title });
             trackingState.activeDocId = log.id; trackingState.type = type; trackingState.title = title;
         }
-
         async function stopTracking() { if(trackingState.activeDocId) { await db.collection("activity_logs").doc(trackingState.activeDocId).update({ endTime: Date.now() }); trackingState.activeDocId = null; } }
 
         async function openPdf(id, t) { await stopTracking(); await startTracking("Read Online", t); document.getElementById('pdf-frame').src = `/public/${id}_read_online.pdf`; document.getElementById('reader-overlay').classList.remove('hidden'); }
         async function borrowBook(id, t) { await db.collection("borrows").add({ userId: currentUser.uid, bookId: id, title: t, date: Date.now() }); alert("Issued!"); }
         function closeReader() { stopTracking(); startTracking("Total App Usage", "Login Session"); document.getElementById('reader-overlay').classList.add('hidden'); }
+        function handleLogout() { stopTracking(); location.reload(); }
+        function toggleProfile() { document.getElementById('prof-name').innerText = currentUser.fullName; document.getElementById('prof-role').innerText = (currentUser.role||'student').toUpperCase(); document.getElementById('profile-overlay').classList.toggle('hidden'); }
+        function closeView(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
 </html>
