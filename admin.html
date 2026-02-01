@@ -90,7 +90,6 @@
         const id = document.getElementById('acid').value, p = document.getElementById('apass').value;
         if(adminAccounts[id] === p) {
             isSuperAdmin = (id === "aslin"); document.getElementById('auth-overlay').classList.add('hidden'); document.getElementById('master-panel').classList.remove('hidden');
-            if(!isSuperAdmin) document.getElementById('t-nom').classList.add('hidden');
             initAdmin();
         } else alert("Denied");
     }
@@ -117,15 +116,16 @@
         refreshInbox();
     }
 
-    // LOGS VISIBILITY FIX
     async function openReport(uid, name, role) {
         activeUID = uid; activeName = name; document.getElementById('user-modal').classList.remove('hidden');
         document.getElementById('modal-title').innerText = name;
         if(isSuperAdmin) { document.getElementById('super-role-box').classList.remove('hidden'); document.getElementById('new-role-select').value = role || 'student'; }
         if (logUnsub) logUnsub();
+        
+        // LOGS DISPLAY FIX
         logUnsub = db.collection("activity_logs").where("userId", "==", uid).onSnapshot(snap => {
             let t=0, o=0, b=0, html=""; currentLogs = [];
-            snap.forEach(d => { const data = d.data(); currentLogs.push(data); });
+            snap.forEach(d => { const data = d.data(); logsData = data; currentLogs.push(data); });
             currentLogs.sort((x, y) => (y.startTime || 0) - (x.startTime || 0));
             currentLogs.forEach(d => {
                 const dur = d.endTime ? Math.floor((d.endTime - d.startTime) / 1000) : 0;
@@ -144,7 +144,7 @@
             snap.forEach(doc => {
                 const d = doc.data(); const date = new Date(d.date);
                 const html = `<div class="glass-card" style="margin-bottom:10px; font-size:12px; border-left:4px solid var(--blue);">
-                    <div style="display:flex; justify-content:space-between; opacity:0.7;"><span>📅 ${date.toLocaleDateString()} | ${date.toLocaleTimeString()}</span><span>User: ${d.userId || d.user || 'N/A'}</span></div>
+                    <div style="display:flex; justify-content:space-between; opacity:0.7;"><span>📅 ${date.toLocaleDateString()} | ${date.toLocaleTimeString()}</span><span>User ID: ${d.userId || d.user || 'N/A'}</span></div>
                     <b style="color:var(--blue)">${d.type}</b> from <b>${d.college || 'N/A'}</b><br><p>${d.message || d.book || ''}</p>
                     <div style="text-align:right;"><button class="btn-sm" style="background:#ef4444;" onclick="deleteMsg('${doc.id}')">🗑️ Delete</button></div>
                 </div>`;
@@ -153,6 +153,13 @@
             document.getElementById('nom-badge').innerText = n; document.getElementById('nom-badge').classList.toggle('hidden', n === 0);
             document.getElementById('msg-badge').innerText = m; document.getElementById('msg-badge').classList.toggle('hidden', m === 0);
         });
+    }
+
+    async function addNewBook() {
+        const t = document.getElementById('new-title').value.trim(), c = document.getElementById('new-cat').value, a = document.getElementById('new-access').value.trim().split(',').map(s=>s.trim());
+        if(!t || !c) return alert("Title and Category required");
+        await db.collection("library_settings").add({ title: t, category: c, allowedColleges: a, recent: true, trending: false });
+        alert("Added!"); document.getElementById('new-title').value = "";
     }
 
     function downloadCSV() {
@@ -168,13 +175,6 @@
         a.download = `${activeName}_Report.csv`; a.click();
     }
 
-    async function addNewBook() {
-        const t = document.getElementById('new-title').value.trim(), c = document.getElementById('new-cat').value, a = document.getElementById('new-access').value.trim().split(',').map(s=>s.trim());
-        if(!t || !c) return alert("Title and Category required");
-        await db.collection("library_settings").add({ title: t, category: c, allowedColleges: a, recent: true, trending: false });
-        alert("Added!"); document.getElementById('new-title').value = "";
-    }
-
     async function changeUserRole() { await db.collection("users").doc(activeUID).update({ role: document.getElementById('new-role-select').value }); alert("Updated!"); }
     async function updF(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
     async function toggleAccess(id, coll, has) { 
@@ -183,6 +183,7 @@
         allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll];
         await ref.update({ allowedColleges: allowed }); 
     }
+    async function deleteMsg(id) { if(confirm("Delete?")) await db.collection("admin_messages").doc(id).delete(); }
     async function deletePDF(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
     function loadCollegeStudents(cid) { db.collection("users").where("collegeId", "==", cid).onSnapshot(snap => { const list = document.getElementById('user-folders-list'); list.innerHTML = ""; snap.forEach(doc => { const u = doc.data(); list.innerHTML += `<div class="user-folder" onclick='openReport("${doc.id}","${u.fullName}","${u.role}")'>📂 <b>${u.fullName}</b> ➔</div>`; }); }); }
     function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => m.id !== id ? m.classList.remove('show') : null); document.getElementById(id).classList.toggle('show'); }
