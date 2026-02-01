@@ -67,7 +67,7 @@
 
         <div id="nom-section" class="hidden glass-card"><h2>📥 Faculty Nominations</h2><div id="nomination-list"></div></div>
         <div id="mem-section" class="hidden glass-card"><select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px;"><option value="">Select College</option><option value="IMC26">IMC26</option><option value="ASLIN26">ASLIN26</option></select><div id="user-folders-list"></div></div>
-        <div id="stud-section" class="hidden glass-card"><h2>📤 Registration</h2><textarea id="bulk-input" class="login-field" style="height:100px;"></textarea></div>
+        <div id="stud-section" class="hidden glass-card"><h2>📤 Registration</h2><textarea id="bulk-input" class="login-field" style="height:100px;" placeholder="Name, CollID, StudentID, Pass, Role"></textarea></div>
         <div id="msg-section" class="hidden glass-card"><div style="display:flex; justify-content:space-between; align-items:center;"><h2>📥 Inbox</h2><button class="btn-sm" style="background:var(--orange);" onclick="refreshInbox()">🔄 Refresh</button></div><div id="inbox-list"></div></div>
     </div>
 
@@ -90,7 +90,6 @@
         const id = document.getElementById('acid').value, p = document.getElementById('apass').value;
         if(adminAccounts[id] === p) {
             isSuperAdmin = (id === "aslin"); document.getElementById('auth-overlay').classList.add('hidden'); document.getElementById('master-panel').classList.remove('hidden');
-            if(!isSuperAdmin) document.getElementById('t-nom').classList.add('hidden');
             initAdmin();
         } else alert("Denied");
     }
@@ -117,6 +116,7 @@
         refreshInbox();
     }
 
+    // --- FIX: VISIBLE LOGS LOGIC ---
     async function openReport(uid, name, role) {
         activeUID = uid; activeName = name; document.getElementById('user-modal').classList.remove('hidden');
         document.getElementById('modal-title').innerText = name;
@@ -124,7 +124,7 @@
         if (logUnsub) logUnsub();
         
         logUnsub = db.collection("activity_logs").where("userId", "==", uid).onSnapshot(snap => {
-            let t=0, o=0, b=0, html=""; currentLogs = [];
+            let t=0, o=0, b=0, rowsHtml=""; currentLogs = [];
             snap.forEach(d => { 
                 const data = d.data(); 
                 currentLogs.push(data); 
@@ -132,11 +132,12 @@
                 if(data.type.includes("Usage")) t += dur; 
                 if(data.type.includes("Online")) o += dur; 
                 if(data.type.includes("Borrowed") || data.type.includes("Full")) b += dur;
-                html += `<tr><td>${data.type}<br><small>${data.activity || ''}</small></td><td>${data.startTime ? new Date(data.startTime).toLocaleTimeString() : '--'}</td><td>${data.endTime ? new Date(data.endTime).toLocaleTimeString() : 'Active'}</td><td>${fmt(dur)}</td></tr>`;
+                rowsHtml += `<tr><td>${data.type}<br><small>${data.activity || ''}</small></td><td>${data.startTime ? new Date(data.startTime).toLocaleTimeString() : '--'}</td><td>${data.endTime ? new Date(data.endTime).toLocaleTimeString() : 'Active'}</td><td>${fmt(dur)}</td></tr>`;
             });
             currentLogs.sort((x, y) => (y.startTime || 0) - (x.startTime || 0));
             document.getElementById('modal-stats').innerHTML = `<div class="stat-grid"><div class="stat-box">Usage<br><b>${fmt(t)}</b></div><div class="stat-box">Online<br><b>${fmt(o)}</b></div><div class="stat-box">Borrowed<br><b>${fmt(b)}</b></div></div>`;
-            document.getElementById('log-body').innerHTML = html || "<tr><td colspan='4'>No activity</td></tr>";
+            // THE FIX: LINKING THE HTML TO THE PAGE
+            document.getElementById('log-body').innerHTML = rowsHtml || "<tr><td colspan='4'>No activity</td></tr>";
         });
     }
 
