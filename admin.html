@@ -46,10 +46,10 @@
         </div>
 
         <div id="inv-section" class="glass-card">
-            <div id="add-book-form" class="hidden" style="margin-bottom:20px;">
-                <h3>Add New Book (Super Admin)</h3>
+            <div id="add-book-form" class="hidden" style="margin-bottom:25px; padding:20px; border:1px dashed var(--blue); border-radius:15px;">
+                <h3>📚 Add New Book Entry</h3>
                 <input type="text" id="new-title" class="login-field" placeholder="Title">
-                <select id="new-cat" class="login-field"><option value="">Category</option><option value="Theology">Theology</option><option value="Church History">Church History</option><option value="Mission">Mission</option><option value="Bible Intro">Bible Intro</option><option value="Acts">Acts</option><option value="Ethics">Ethics</option><option value="Other Books">Other Books</option></select>
+                <select id="new-cat" class="login-field"><option value="Theology">Theology</option><option value="Church History">Church History</option><option value="Mission">Mission</option><option value="Bible Intro">Bible Intro</option><option value="Acts">Acts</option><option value="Ethics">Ethics</option><option value="Other Books">Other Books</option></select>
                 <input type="text" id="new-access" class="login-field" placeholder="Allowed Colleges (comma-separated)">
                 <button class="btn-sm" style="background:var(--green); width:100%;" onclick="addNewBook()">Add Book</button>
             </div>
@@ -57,10 +57,17 @@
         </div>
 
         <div id="nom-section" class="hidden glass-card"><h2>📥 Faculty Nominations</h2><div id="nomination-list"></div></div>
-        
+
         <div id="mem-section" class="hidden glass-card">
-            <select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px;"><option value="">Select College</option><option value="IMC26">IMC26</option><option value="ASLIN26">ASLIN26</option></select>
-            <div id="user-folders-list"></div>
+            <h2>📊 Monitoring</h2>
+            <div id="coll-selector-div">
+                <select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px;">
+                    <option value="">Select College to View Students</option>
+                    <option value="IMC26">IMC26</option>
+                    <option value="ASLIN26">ASLIN26</option>
+                </select>
+            </div>
+            <div id="user-folders-list" style="margin-top:20px;"></div>
         </div>
 
         <div id="stud-section" class="hidden glass-card"><h2>📤 Registration</h2><textarea id="bulk-input" class="login-field" style="height:100px;"></textarea><button class="btn-sm" style="background:var(--green); width:100%; margin-top:10px;" onclick="bulkRegisterUsers()">Register</button></div>
@@ -123,6 +130,7 @@
         refreshInbox();
     }
 
+    // LOGIC INJECTION: LIVE SNAPSHOT LOGGING SYSTEM
     async function openReport(uid, name, role) {
         activeUID = uid; activeName = name; document.getElementById('user-modal').classList.remove('hidden');
         document.getElementById('modal-title').innerText = name;
