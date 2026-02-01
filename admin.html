@@ -84,12 +84,14 @@
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
     firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
-    const adminAccounts = { "aslin": "Phlagon@28" };
-    let activeUID = "", activeName = "", isSuperAdmin = false, logUnsub = null, currentLogs = [];
+    const adminAccounts = { "aslin": "Phlagon@28" }; // Add college admins here, e.g., "IMC26": "pass"
+    let activeUID = "", activeName = "", isSuperAdmin = false, currentCollegeId = "", logUnsub = null, currentLogs = [];
     function handleAdminLogin() {
         const id = document.getElementById('acid').value, p = document.getElementById('apass').value;
         if(adminAccounts[id] === p) {
-            isSuperAdmin = (id === "aslin"); document.getElementById('auth-overlay').classList.add('hidden'); document.getElementById('master-panel').classList.remove('hidden');
+            isSuperAdmin = (id === "aslin");
+            currentCollegeId = isSuperAdmin ? "" : id;
+            document.getElementById('auth-overlay').classList.add('hidden'); document.getElementById('master-panel').classList.remove('hidden');
             initAdmin();
         } else alert("Denied");
     }
@@ -110,7 +112,13 @@
             });
             if (snap.empty) list.innerHTML = "<tr><td colspan='5'>No books</td></tr>";
         });
-        if (isSuperAdmin) refreshInbox();
+        if (!isSuperAdmin) {
+            document.getElementById('mon-coll').classList.add('hidden');
+            loadCollegeStudents(currentCollegeId);
+            document.getElementById('t-inv').classList.add('hidden'); // Optional: Hide inventory for college admins
+            document.getElementById('t-stud').classList.add('hidden'); // Optional: Hide registration for college admins
+        }
+        refreshInbox();
     }
     async function addNewBook() {
         const title = document.getElementById('new-title').value.trim();
@@ -155,10 +163,10 @@
             logs.sort((x, y) => (y.startTime || 0) - (x.startTime || 0));
             logs.forEach(d => {
                 const dur = d.endTime ? Math.floor((d.endTime - d.startTime) / 1000) : 0;
-                if(d.type.includes("Usage")) t+=dur; if(d.type.includes("Online")) o+=dur; if(d.type.includes("Borrowed")) b+=dur;
-                html += `<tr><td>${d.type}<br><small>${d.activity||''}</small></td><td>${d.startTime ? new Date(d.startTime).toLocaleTimeString() : '--'}</td><td>${d.endTime ? new Date(d.endTime).toLocaleTimeString() : 'Active'}</td><td>${fmt(dur)}</td></tr>`;
+                if(d.type.includes("Usage")) t+=dur; if(d.type.includes("Online Read")) o+=dur; if(d.type.includes("Full Read")) b+=dur;
+                html += `<tr><td>${d.type}<br><small>${d.activity||''}</small></td><td>${d.startTime ? new Date(d.startTime).toLocaleString() : '--'}</td><td>${d.endTime ? new Date(d.endTime).toLocaleString() : 'Active'}</td><td>${fmt(dur)}</td></tr>`;
             });
-            document.getElementById('modal-stats').innerHTML = `<div class="stat-grid"><div class="stat-box">Usage<br><b>${fmt(t)}</b></div><div class="stat-box">Online<br><b>${fmt(o)}</b></div><div class="stat-box">Read Full<br><b>${fmt(b)}</b></div></div>`;
+            document.getElementById('modal-stats').innerHTML = `<div class="stat-grid"><div class="stat-box">App Usage<br><b>${fmt(t)}</b></div><div class="stat-box">Read Online<br><b>${fmt(o)}</b></div><div class="stat-box">Borrowed Reading<br><b>${fmt(b)}</b></div></div>`;
             document.getElementById('log-body').innerHTML = html || "<tr><td colspan='4'>No activity</td></tr>";
         });
     }
@@ -175,7 +183,9 @@
         URL.revokeObjectURL(url);
     }
     function refreshInbox() {
-        db.collection("admin_messages").orderBy("date", "desc").onSnapshot(snap => {
+        let query = db.collection("admin_messages").orderBy("date", "desc");
+        if (!isSuperAdmin) query = query.where("college", "==", currentCollegeId);
+        query.onSnapshot(snap => {
             const list = document.getElementById('inbox-list'); list.innerHTML = "Loading...";
             list.innerHTML = "";
             snap.forEach(doc => {
@@ -198,7 +208,7 @@
     function loadCollegeStudents(cid) { db.collection("users").where("collegeId","==",cid).onSnapshot(snap => { const list = document.getElementById('user-folders-list'); list.innerHTML = "Loading..."; list.innerHTML = ""; snap.forEach(doc => { const u = doc.data(); list.innerHTML += `<div class="user-folder" onclick='openReport("${doc.id}","${u.fullName}","${u.role}")'>📂 <b>${u.fullName}</b> ➔</div>`; }); if (snap.empty) list.innerHTML = "No students"; }); }
     function fmt(s) { if(isNaN(s) || s <= 0) return "00:00:00"; const h = Math.floor(s/3600).toString().padStart(2,'0'), m = Math.floor((s%3600)/60).toString().padStart(2,'0'), sec = (s%60).toString().padStart(2,'0'); return `${h}:${m}:${sec}`; }
     function closeModal() { document.getElementById('user-modal').classList.add('hidden'); if(logUnsub) logUnsub(); }
-    function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === 't-'+t)); document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', s.id !== t+'-section')); }
+    function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === 't-'+t)); document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', s.id !== t+'-section')); if (t === 'mem' && !isSuperAdmin) loadCollegeStudents(currentCollegeId); }
 </script>
 </body>
 </html>
