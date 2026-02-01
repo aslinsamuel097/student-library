@@ -48,7 +48,7 @@
 
         <div id="inv-section" class="glass-card">
             <div id="add-book-form" class="hidden" style="margin-bottom:25px; padding:20px; border:1px dashed var(--blue); border-radius:15px;">
-                <h3 style="margin-top:0;">📚 Add New Book Entry</h3>
+                <h3>📚 Add New Book Entry</h3>
                 <input type="text" id="new-title" class="login-field" placeholder="Title">
                 <select id="new-cat" class="login-field">
                     <option value="">Category</option>
@@ -67,32 +67,21 @@
         </div>
 
         <div id="nom-section" class="hidden glass-card"><h2>📥 Faculty Nominations</h2><div id="nomination-list"></div></div>
-        
-        <div id="mem-section" class="hidden glass-card">
-            <div id="coll-selector-div">
-                <select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px;">
-                    <option value="">Select College</option>
-                    <option value="IMC26">IMC26</option>
-                    <option value="ASLIN26">ASLIN26</option>
-                </select>
-            </div>
-            <div id="user-folders-list"></div>
-        </div>
-
+        <div id="mem-section" class="hidden glass-card"><select id="mon-coll" onchange="loadCollegeStudents(this.value)" class="login-field" style="max-width:250px;"><option value="">Select College</option><option value="IMC26">IMC26</option><option value="ASLIN26">ASLIN26</option></select><div id="user-folders-list"></div></div>
         <div id="stud-section" class="hidden glass-card"><h2>📤 Registration</h2><p id="reg-msg" class="hidden">Contact Super Admin to add members.</p><textarea id="bulk-input" class="login-field" style="height:100px;"></textarea></div>
         <div id="msg-section" class="hidden glass-card"><div style="display:flex; justify-content:space-between; align-items:center;"><h2>📥 Inbox</h2><button class="btn-sm" style="background:var(--orange);" onclick="refreshInbox()">🔄 Refresh</button></div><div id="inbox-list"></div></div>
-
-        <div id="help-section" class="hidden glass-card">
-            <h2>📞 Contact Super Admin</h2>
-            <textarea id="help-msg" class="login-field" style="height:150px;" placeholder="Message to Super Admin..."></textarea>
-            <button class="btn-sm" style="background:var(--blue); width:100%;" onclick="sendAdminHelp()">Send Message</button>
-        </div>
+        <div id="help-section" class="hidden glass-card"><h2>📞 Contact Super Admin</h2><textarea id="help-msg" class="login-field" style="height:150px;" placeholder="Message to Super Admin..."></textarea><button class="btn-sm" style="background:var(--blue); width:100%;" onclick="sendAdminHelp()">Send</button></div>
     </div>
 
     <div id="user-modal" class="hidden">
         <div class="modal-content">
             <div style="display:flex; justify-content:space-between;"><h3 id="modal-title">Report</h3><div style="display:flex; gap:10px;"><button onclick="downloadCSV()" class="btn-sm" style="background:var(--blue);">📥 CSV</button><button onclick="closeModal()" class="btn-sm" style="background:#ef4444;">X</button></div></div>
-            <div id="super-role-box" class="hidden glass-card" style="padding:15px; margin-top:15px; border-color:var(--purple);"><label style="font-size:11px;">Change Role:</label><div style="display:flex; gap:10px; margin-top:5px;"><select id="new-role-select" class="login-field" style="margin:0; flex:1;"><option value="student">Student</option><option value="faculty">Faculty</option></select><button class="btn-sm" style="background:var(--purple);" onclick="changeUserRole()">Update</button></div></div>
+            <div id="super-role-box" class="hidden glass-card" style="padding:15px; margin-top:15px; border-color:var(--purple);"><label style="font-size:11px;">Change Role:</label>
+                <div style="display:flex; gap:10px; margin-top:5px;">
+                    <select id="new-role-select" class="login-field" style="margin:0; flex:1;"><option value="student">Student</option><option value="faculty">Faculty</option></select>
+                    <button class="btn-sm" style="background:var(--purple);" onclick="changeUserRole()">Update</button>
+                </div>
+            </div>
             <div id="modal-stats" style="margin-top:15px;"></div>
             <table style="margin-top:20px;"><thead><tr><th>Activity</th><th>Start</th><th>End</th><th>Duration</th></tr></thead><tbody id="log-body"></tbody></table>
         </div>
@@ -109,12 +98,8 @@
         if(adminAccounts[id] === p) {
             isSuper = (id === "aslin"); loggedID = id;
             document.getElementById('auth-overlay').classList.add('hidden'); document.getElementById('master-panel').classList.remove('hidden');
-            if(!isSuper) {
-                document.getElementById('t-nom').classList.add('hidden'); document.getElementById('t-msg').classList.add('hidden');
-                document.getElementById('t-help').classList.remove('hidden'); document.getElementById('bulk-input').classList.add('hidden');
-                document.getElementById('reg-msg').classList.remove('hidden'); document.getElementById('coll-selector-div').classList.add('hidden');
-                loadCollegeStudents(id);
-            } else { document.getElementById('add-book-form').classList.remove('hidden'); }
+            if(!isSuper) { document.getElementById('t-nom').classList.add('hidden'); document.getElementById('t-msg').classList.add('hidden'); document.getElementById('t-help').classList.remove('hidden'); document.getElementById('bulk-input').classList.add('hidden'); document.getElementById('reg-msg').classList.remove('hidden'); loadCollegeStudents(id); }
+            else { document.getElementById('add-book-form').classList.remove('hidden'); }
             initAdmin();
         } else alert("Denied");
     }
@@ -125,13 +110,7 @@
             snap.forEach(doc => {
                 const b = doc.data(); const id = doc.id; const allowed = b.allowedColleges || [];
                 const cats = ['Theology','Church History','Mission','Bible Intro','Acts','Ethics','Other Books'];
-                list.innerHTML += `<tr>
-                    <td><b>${b.title}</b></td>
-                    <td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--purple)" onclick="toggleM('a-${id}')">Access</button><div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>` : 'Restricted'}</td>
-                    <td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--green)" onclick="toggleM('c-${id}')">${b.category || 'Cat'}</button><div id="c-${id}" class="dropdown-menu">${cats.map(c => `<div class="dropdown-item" onclick="updF('${id}','category','${c}')">${c} ${b.category === c ? '✅' : ''}</div>`).join('')}</div>` : b.category}</td>
-                    <td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--orange)" onclick="toggleM('p-${id}')">Promo</button><div id="p-${id}" class="dropdown-menu"><div class="dropdown-item" onclick="updF('${id}','recent',${!b.recent})">Recent ${b.recent?'✅':''}</div><div class="dropdown-item" onclick="updF('${id}','trending',${!b.trending})">Trending ${b.trending?'✅':''}</div></div>` : 'None'}</td>
-                    <td>${isSuper ? `<button class="btn-sm" style="background:red" onclick="deletePDF('${id}')">🗑️</button>` : 'None'}</td>
-                </tr>`;
+                list.innerHTML += `<tr><td><b>${b.title}</b></td><td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--purple)" onclick="toggleM('a-${id}')">Access</button><div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>` : 'Restricted'}</td><td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--green)" onclick="toggleM('c-${id}')">${b.category || 'Cat'}</button><div id="c-${id}" class="dropdown-menu">${cats.map(c => `<div class="dropdown-item" onclick="updF('${id}','category','${c}')">${c} ${b.category === c ? '✅' : ''}</div>`).join('')}</div>` : b.category}</td><td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--orange)" onclick="toggleM('p-${id}')">Promo</button><div id="p-${id}" class="dropdown-menu"><div class="dropdown-item" onclick="updF('${id}','recent',${!b.recent})">Recent ${b.recent?'✅':''}</div><div class="dropdown-item" onclick="updF('${id}','trending',${!b.trending})">Trending ${b.trending?'✅':''}</div></div>` : 'None'}</td><td>${isSuper ? `<button class="btn-sm" style="background:red" onclick="deletePDF('${id}')">🗑️</button>` : 'None'}</td></tr>`;
             });
         });
         if(isSuper) refreshInbox();
@@ -157,15 +136,18 @@
     }
 
     function downloadCSV() {
-        if (!currentLogs.length) return alert("No logs");
-        let t=0, o=0, b=0, csv = "Activity,Date,Duration\n";
+        if (!currentLogs.length) return alert("No logs available to download");
+        let t=0, o=0, b=0;
+        let csv = "Activity,Date,Duration\n";
         currentLogs.forEach(d => {
             const dur = d.endTime ? Math.floor((d.endTime - d.startTime) / 1000) : 0;
             if(d.type.includes("Usage")) t += dur; if(d.type.includes("Online Read")) o += dur; if(d.type.includes("Full Read")) b += dur;
             csv += `"${d.type} - ${d.activity || ''}",${new Date(d.startTime).toLocaleString()},${fmt(dur)}\n`;
         });
-        csv += `\nTOTAL USAGE,${fmt(t)}\nTOTAL ONLINE,${fmt(o)}\nTOTAL FULL,${fmt(b)}`;
-        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `${activeName}_Report.csv`; a.click();
+        csv += `\nTOTALS\nApp Usage,${fmt(t)}\nOnline Read,${fmt(o)}\nFull Read,${fmt(b)}`;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = `${activeName}_Report.csv`; a.click();
     }
 
     function loadCollegeStudents(cid) {
@@ -202,9 +184,14 @@
         alert("Added!"); document.getElementById('new-title').value = "";
     }
 
+    async function changeUserRole() { 
+        if(!activeUID) return;
+        const newRole = document.getElementById('new-role-select').value;
+        await db.collection("users").doc(activeUID).update({ role: newRole }); 
+        alert("Updated to " + newRole); 
+    }
     async function toggleAccess(id, coll, has) { const ref = db.collection("library_settings").doc(id); const d = await ref.get(); let allowed = d.data().allowedColleges || []; allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll]; await ref.update({ allowedColleges: allowed }); }
     async function updF(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
-    async function changeUserRole() { await db.collection("users").doc(activeUID).update({ role: document.getElementById('new-role-select').value }); alert("Updated!"); }
     async function deleteMsg(id) { if(confirm("Delete?")) await db.collection("admin_messages").doc(id).delete(); }
     async function deletePDF(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
     function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => m.id !== id ? m.classList.remove('show') : null); document.getElementById(id).classList.toggle('show'); }
