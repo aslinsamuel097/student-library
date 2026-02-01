@@ -20,7 +20,7 @@
         #auth-screen, #profile-overlay, #reader-overlay, #full-lib-view, #borrow-view, #search-results-overlay, .full-modal { position: fixed; inset: 0; z-index: 9000; background: var(--bg); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
         .hidden { display: none !important; }
         .dropdown { position: relative; margin-bottom: 15px; }
-        .dropdown-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 12px; width: 100%; text-align: left; color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .dropdown-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 12px; width: 100%; text-align: left; color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
         .dropdown-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-top: 5px; display: none; overflow: hidden; }
         .dropdown.active .dropdown-content { display: block; }
         .dropdown-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; }
@@ -63,6 +63,7 @@
         <div style="display:grid; grid-template-columns: 2fr 1.2fr; gap: 15px;">
             <div>
                 <input type="text" id="lib-search" class="login-field" placeholder="🔍 Search library..." oninput="mirrorTyping(this.value)">
+                
                 <div class="dropdown" id="cat-dropdown">
                     <div class="dropdown-btn" onclick="toggleDropdown()"><span>📂 Categories (7 Folders)</span> <span>▼</span></div>
                     <div class="dropdown-content">
@@ -75,8 +76,12 @@
                         <div class="dropdown-item" onclick="loadCat('Other Books')">📚 Other Books</div>
                     </div>
                 </div>
+
                 <div class="glass-card"><h3>🕒 Recent</h3><div id="recent-list"></div></div>
+                
+                <div class="glass-card"><h3>🔥 Trending</h3><div id="trending-list"></div></div>
             </div>
+
             <div>
                 <div class="glass-card" style="border-color: var(--purple);">
                     <h4>💡 Suggestions</h4>
@@ -140,12 +145,10 @@
             const cid = document.getElementById('login-coll-id').value.trim();
             const uid = document.getElementById('login-user-id').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
-            
             const snap = await db.collection("users").where("collegeId","==",cid).where("studentId","==",uid).where("password","==",pass).get();
-            
             if(!snap.empty) {
                 const u = snap.docs[0].data();
-                if((u.role || 'student') !== role) { alert("Invalid role for this ID"); return; }
+                if((u.role || 'student') !== role) { alert("Invalid role"); return; }
                 currentUser = { uid: snap.docs[0].id, ...u };
                 document.getElementById('auth-screen').classList.add('hidden'); 
                 document.getElementById('dashboard').classList.remove('hidden');
@@ -165,8 +168,16 @@
 
         function loadLibrary() {
             db.collection("library_settings").where("allowedColleges","array-contains",currentUser.collegeId).onSnapshot(snap => {
-                collegeBooks = []; const rec = document.getElementById('recent-list'); rec.innerHTML = "";
-                snap.forEach(doc => { const b = doc.data(); collegeBooks.push({id: doc.id, ...b}); rec.innerHTML += renderItem({id:doc.id, ...b}); });
+                collegeBooks = []; 
+                const rec = document.getElementById('recent-list'); 
+                const trnd = document.getElementById('trending-list');
+                rec.innerHTML = ""; trnd.innerHTML = "";
+                snap.forEach(doc => { 
+                    const b = doc.data(); const bookData = {id: doc.id, ...b}; collegeBooks.push(bookData); 
+                    const html = renderItem(bookData);
+                    rec.innerHTML += html;
+                    if(b.recent) trnd.innerHTML += html;
+                });
                 document.getElementById('top-total').innerText = snap.size;
             });
             db.collection("borrows").where("userId","==",currentUser.uid).onSnapshot(snap => {
@@ -180,7 +191,7 @@
             document.getElementById('mirror-text').innerText = val || "...";
             if(val.trim().length > 1) {
                 const list = document.getElementById('search-results-list'); list.innerHTML = "";
-                const filtered = collegeBooks.filter(b => b.title.toLowerCase().includes(val.toLowerCase()) || b.category.toLowerCase().includes(val.toLowerCase()));
+                const filtered = collegeBooks.filter(b => b.title.toLowerCase().includes(val.toLowerCase()) || (b.category && b.category.toLowerCase().includes(val.toLowerCase())));
                 filtered.forEach(b => list.innerHTML += renderItem(b));
                 document.getElementById('search-results-overlay').classList.remove('hidden');
             }
@@ -197,7 +208,6 @@
         function toggleProfile() { 
             document.getElementById('p-name').innerText = currentUser.fullName;
             document.getElementById('p-role-box').innerText = currentUser.role.toUpperCase();
-            // FILLING IDS IN PROFILE
             document.getElementById('p-coll-id-display').innerText = currentUser.collegeId;
             document.getElementById('p-user-id-display').innerText = currentUser.studentId;
             document.getElementById('profile-overlay').classList.toggle('hidden'); 
