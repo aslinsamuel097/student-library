@@ -89,14 +89,14 @@
     const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
     firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
     const adminAccounts = { "aslin": "Phlagon@28", "IMC26": "IMC26@theo", "ASLIN26": "ASLIN26@theo" };
-    let activeUID = "", activeName = "", isSuper = false, loggedID = "", logUnsub = null, currentLogs = [];
+    let activeUID = "", activeName = "", isSuperAdmin = false, loggedID = "", logUnsub = null, currentLogs = [];
 
     function handleAdminLogin() {
         const id = document.getElementById('acid').value, p = document.getElementById('apass').value;
         if(adminAccounts[id] === p) {
-            isSuper = (id === "aslin"); loggedID = id;
+            isSuperAdmin = (id === "aslin"); loggedID = id;
             document.getElementById('auth-overlay').classList.add('hidden'); document.getElementById('master-panel').classList.remove('hidden');
-            if(!isSuper) {
+            if(!isSuperAdmin) {
                 document.getElementById('t-nom').classList.add('hidden'); document.getElementById('t-msg').classList.add('hidden');
                 document.getElementById('t-help').classList.remove('hidden'); document.getElementById('bulk-input').classList.add('hidden');
                 document.getElementById('reg-msg').classList.remove('hidden');
@@ -114,21 +114,21 @@
                 const b = doc.data(); const id = doc.id; const allowed = b.allowedColleges || [];
                 list.innerHTML += `<tr>
                     <td><b>${b.title}</b></td>
-                    <td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--purple)" onclick="toggleM('a-${id}')">Access</button><div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>` : 'Restricted'}</td>
-                    <td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--green)" onclick="toggleM('c-${id}')">Cat</button><div id="c-${id}" class="dropdown-menu">${['Theology','Church History','Mission','Bible Intro','Acts','Ethics','Other Books'].map(cat => `<div class="dropdown-item" onclick="updF('${id}','category','${cat}')">${cat} ${b.category === cat ? '✅' : ''}</div>`).join('')}</div>` : b.category}</td>
-                    <td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--orange)" onclick="toggleM('p-${id}')">Promo</button><div id="p-${id}" class="dropdown-menu"><div class="dropdown-item" onclick="updF('${id}','recent',${!b.recent})">Recent ${b.recent?'✅':''}</div><div class="dropdown-item" onclick="updF('${id}','trending',${!b.trending})">Trending ${b.trending?'✅':''}</div></div>` : 'None'}</td>
-                    <td>${isSuper ? `<button class="btn-sm" style="background:red" onclick="deletePDF('${id}')">🗑️</button>` : 'None'}</td>
+                    <td style="position:relative;">${isSuperAdmin ? `<button class="btn-sm" style="background:var(--purple)" onclick="toggleM('a-${id}')">Access</button><div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>` : 'Restricted'}</td>
+                    <td style="position:relative;">${isSuperAdmin ? `<button class="btn-sm" style="background:var(--green)" onclick="toggleM('c-${id}')">Cat</button><div id="c-${id}" class="dropdown-menu">${['Theology','Church History','Mission','Bible Intro','Acts','Ethics','Other Books'].map(cat => `<div class="dropdown-item" onclick="updF('${id}','category','${cat}')">${cat} ${b.category === cat ? '✅' : ''}</div>`).join('')}</div>` : b.category}</td>
+                    <td style="position:relative;">${isSuperAdmin ? `<button class="btn-sm" style="background:var(--orange)" onclick="toggleM('p-${id}')">Promo</button><div id="p-${id}" class="dropdown-menu"><div class="dropdown-item" onclick="updF('${id}','recent',${!b.recent})">Recent ${b.recent?'✅':''}</div><div class="dropdown-item" onclick="updF('${id}','trending',${!b.trending})">Trending ${b.trending?'✅':''}</div></div>` : 'None'}</td>
+                    <td>${isSuperAdmin ? `<button class="btn-sm" style="background:red" onclick="deletePDF('${id}')">🗑️</button>` : 'None'}</td>
                 </tr>`;
             });
         });
         refreshInbox();
     }
 
-    // RESTORED FIX: ENSURING ROWS APPEND TO TABLE
+    // FIXED LOG LOGIC ADDED BELOW
     async function openReport(uid, name, role) {
         activeUID = uid; activeName = name; document.getElementById('user-modal').classList.remove('hidden');
         document.getElementById('modal-title').innerText = name;
-        if(isSuper) { document.getElementById('super-role-box').classList.remove('hidden'); document.getElementById('new-role-select').value = role || 'student'; }
+        if(isSuperAdmin) { document.getElementById('super-role-box').classList.remove('hidden'); document.getElementById('new-role-select').value = role || 'student'; }
         
         if (logUnsub) logUnsub();
         logUnsub = db.collection("activity_logs").where("userId", "==", uid).onSnapshot(snap => {
@@ -163,8 +163,7 @@
         let csv = "Activity,Date,Duration\n";
         currentLogs.forEach(d => {
             const start = d.startTime ? new Date(d.startTime) : null;
-            const end = d.endTime ? new Date(d.endTime) : null;
-            const dur = end ? Math.floor((d.endTime - d.startTime) / 1000) : 0;
+            const dur = d.endTime ? Math.floor((d.endTime - d.startTime) / 1000) : 0;
             csv += `"${d.type} - ${d.activity || ''}",${start ? start.toLocaleDateString() : '--'},${fmt(dur)}\n`;
         });
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
@@ -180,7 +179,7 @@
                 const html = `<div class="glass-card" style="margin-bottom:10px; font-size:12px; border-left:4px solid var(--blue);">
                     <div style="display:flex; justify-content:space-between; opacity:0.7;"><span>📅 ${dt.toLocaleDateString()} | ${dt.toLocaleTimeString()}</span><span>User: ${d.userId || d.user || 'N/A'}</span></div>
                     <b style="color:var(--blue)">${d.type}</b> from <b>${d.college || 'N/A'}</b><br><p>${d.message || d.book || ''}</p>
-                    ${isSuper ? `<div style="text-align:right;"><button class="btn-sm" style="background:red;" onclick="deleteMsg('${doc.id}')">Delete</button></div>` : ''}
+                    ${isSuperAdmin ? `<div style="text-align:right;"><button class="btn-sm" style="background:red;" onclick="deleteMsg('${doc.id}')">Delete</button></div>` : ''}
                 </div>`;
                 if(d.type.includes("Nomination")) { n++; nomList.innerHTML += html; } else { m++; list.innerHTML += html; }
             });
