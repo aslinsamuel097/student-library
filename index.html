@@ -114,7 +114,7 @@
         const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
         let currentUser = null; let collegeBooks = []; let sessionSeconds = 0; let isActive = true;
-        let logId = null;
+        let logId = null; let previousView = 'dashboard'; // To track view before opening reader
         document.addEventListener("visibilitychange", async () => {
             isActive = !document.hidden;
             document.getElementById('session-box').classList.toggle('paused', !isActive);
@@ -128,6 +128,7 @@
                 const u = snap.docs[0].data(); if((u.role || 'student') !== r) { alert("Wrong Role"); return; }
                 currentUser = { uid: snap.docs[0].id, ...u };
                 document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden');
+                await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Login", activity: "User Login", startTime: Date.now(), endTime: Date.now() });
                 initSystem(); await startTracking("Usage", "Dashboard Session");
             } else alert("Login Failed");
         }
@@ -183,18 +184,19 @@
         function toggleDropdown() { document.getElementById('cat-dropdown').classList.toggle('active'); }
         function loadCat(cat) { const list = document.getElementById('full-book-list'); list.innerHTML = "Loading..."; list.innerHTML = ""; collegeBooks.filter(b => b.category === cat).forEach(b => list.innerHTML += renderItem(b)); document.getElementById('full-lib-view').classList.remove('hidden'); document.getElementById('cat-dropdown').classList.remove('active'); }
         function toggleProfile() { document.getElementById('p-name').innerText = currentUser.fullName; document.getElementById('p-role-box').innerText = currentUser.role.toUpperCase(); document.getElementById('p-coll-id-display').innerText = currentUser.collegeId; document.getElementById('p-user-id-display').innerText = currentUser.studentId; document.getElementById('profile-overlay').classList.toggle('hidden'); }
-        function openPdfPreview(id, t) { stopTracking(); startTracking("Online Read", t); document.getElementById('reader-title').innerText = t + " (Preview)"; document.getElementById('pdf-frame').src = `/public/${id}_read_online.pdf`; document.getElementById('reader-overlay').classList.remove('hidden'); }
-        function openFullPdf(id, t) { stopTracking(); startTracking("Full Read", t); document.getElementById('reader-title').innerText = t + " (Full)"; document.getElementById('pdf-frame').src = `/public/${id}.pdf`; document.getElementById('reader-overlay').classList.remove('hidden'); }
+        function openPdfPreview(id, t) { previousView = getCurrentView(); stopTracking(); startTracking("Online Read", t); document.getElementById('reader-title').innerText = t + " (Preview)"; document.getElementById('pdf-frame').src = `/public/${id}_read_online.pdf`; document.getElementById('reader-overlay').classList.remove('hidden'); }
+        function openFullPdf(id, t) { previousView = getCurrentView(); stopTracking(); startTracking("Full Read", t); document.getElementById('reader-title').innerText = t + " (Full)"; document.getElementById('pdf-frame').src = `/public/${id}.pdf`; document.getElementById('reader-overlay').classList.remove('hidden'); }
+        function getCurrentView() { if (!document.getElementById('borrow-view').classList.contains('hidden')) return 'borrow-view'; if (!document.getElementById('full-lib-view').classList.contains('hidden')) return 'full-lib-view'; if (!document.getElementById('search-results-overlay').classList.contains('hidden')) return 'search-results-overlay'; return 'dashboard'; }
         async function borrowBook(id, t) { await db.collection("borrows").add({ userId: currentUser.uid, bookId: id, title: t, date: Date.now() }); alert("Issued!"); }
         async function returnBook(borrowId, t) { if (confirm("Return this book?")) { await db.collection("borrows").doc(borrowId).delete(); await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Return", activity: t, startTime: Date.now(), endTime: Date.now() }); alert("Returned!"); } }
         async function nominate(id, t) { await db.collection("admin_messages").add({ type: "Nomination", book: t, user: currentUser.fullName, college: currentUser.collegeId, userId: currentUser.studentId, date: Date.now() }); alert("Sent!"); }
         async function submitContact() { const m = document.getElementById('con-msg').value; if(!m) return; await db.collection("admin_messages").add({ type: "Helpdesk", college: currentUser.collegeId, message: m, user: currentUser.fullName, userId: currentUser.studentId, date: Date.now() }); alert("Sent!"); closeContactModal(); }
         async function submitSuggestion() { const s = document.getElementById('feat-suggest').value; if(!s) return; await db.collection("admin_messages").add({ type: "Suggestion", message: s, user: currentUser.fullName, userId: currentUser.studentId, date: Date.now() }); alert("Sent!"); document.getElementById('feat-suggest').value = ""; }
         async function submitRequest() { const b = document.getElementById('req-book').value; if(!b) return; await db.collection("admin_messages").add({ type: "Request", book: b, user: currentUser.fullName, college: currentUser.collegeId, userId: currentUser.studentId, date: Date.now() }); alert("Sent!"); document.getElementById('req-book').value = ""; }
-        function closeReader() { stopTracking(); startTracking("Usage", "Dashboard Session"); document.getElementById('reader-overlay').classList.add('hidden'); }
+        async function closeReader() { await stopTracking(); document.getElementById('pdf-frame').src = ''; document.getElementById('reader-overlay').classList.add('hidden'); await startTracking("Usage", "Dashboard Session"); if (previousView !== 'dashboard') document.getElementById(previousView).classList.remove('hidden'); }
         function showBorrowView() { document.getElementById('borrow-view').classList.remove('hidden'); }
         function showFullLibrary() { const list = document.getElementById('full-book-list'); list.innerHTML = "Loading..."; list.innerHTML = ""; collegeBooks.forEach(b => list.innerHTML += renderItem(b)); document.getElementById('full-lib-view').classList.remove('hidden'); }
-        function handleLogout() { stopTracking(); location.reload(); }
+        async function handleLogout() { await stopTracking(); await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Logout", activity: "User Logout", startTime: Date.now(), endTime: Date.now() }); location.reload(); }
         function showContactModal() { document.getElementById('contact-modal').classList.remove('hidden'); }
         function closeContactModal() { document.getElementById('contact-modal').classList.add('hidden'); }
         function closeView(id) { document.getElementById(id).classList.add('hidden'); }
