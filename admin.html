@@ -77,18 +77,21 @@
         <div class="modal-content">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h3 id="modal-title">Student Report</h3>
-                <button onclick="closeModal()" class="btn-sm" style="background:#ef4444;">X</button>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="downloadCSV()" class="btn-sm" style="background:var(--blue);">📥 CSV</button>
+                    <button onclick="closeModal()" class="btn-sm" style="background:#ef4444;">X</button>
+                </div>
             </div>
 
             <div id="super-role-box" class="hidden glass-card" style="padding:15px; margin: 15px 0; border-color:var(--purple);">
-                <label style="font-size:11px;">Change Member Role:</label>
+                <label style="font-size:11px;">Update Member Role:</label>
                 <div style="display:flex; gap:10px; margin-top:5px;">
                     <select id="new-role-select" class="login-field" style="margin:0; flex:1;"><option value="student">Student</option><option value="faculty">Faculty</option></select>
                     <button class="btn-sm" style="background:var(--purple);" onclick="changeUserRole()">Update</button>
                 </div>
             </div>
 
-            <div id="modal-stats"></div>
+            <div id="modal-stats" style="margin-top:15px;"></div>
             <table style="margin-top:20px;"><thead><tr><th>Activity</th><th>Start</th><th>End</th><th>Duration</th></tr></thead><tbody id="log-body"></tbody></table>
         </div>
     </div>
@@ -113,21 +116,17 @@
 
     function setupUI() {
         if (!isSuperAdmin) {
-            // Restrictions for College Admin
             document.getElementById('t-stud').classList.add('hidden');
             document.getElementById('coll-selector-div').classList.add('hidden');
             document.getElementById('coll-help-div').classList.remove('hidden');
             document.getElementById('inv-header').innerHTML = "<th>Title</th><th>Category</th>";
             loadCollegeStudents(loggedAdminId);
         } else {
-            // Super Admin View
             document.getElementById('t-stud').classList.remove('hidden');
             document.getElementById('t-msg').classList.remove('hidden');
             document.getElementById('inv-header').innerHTML = "<th>Title</th><th>Access</th><th>Cat</th><th>Action</th>";
         }
     }
-
-    function checkBulkAccess() { if (!isSuperAdmin) { alert("Access Restricted."); document.getElementById('bulk-input').blur(); } }
 
     function initAdmin() {
         db.collection("library_settings").onSnapshot(snap => {
@@ -136,7 +135,7 @@
                 const b = doc.data(); const id = doc.id;
                 let html = `<tr><td><b>${b.title}</b></td>`;
                 if (isSuperAdmin) {
-                    html += `<td style="position:relative;"><button class="btn-sm" style="background:var(--purple);" onclick="toggleM('a-${id}')">Access</button><div id="a-${id}" class="dropdown-menu">...</div></td>`;
+                    html += `<td style="position:relative;"><button class="btn-sm" style="background:var(--purple);" onclick="toggleM('a-${id}')">Access</button></td>`;
                     html += `<td><button class="btn-sm" style="background:var(--green)" onclick="toggleM('c-${id}')">Cat</button></td>`;
                     html += `<td><button class="btn-sm" style="background:#ef4444" onclick="deletePDF('${id}')">🗑️</button></td>`;
                 } else { html += `<td>${b.category || 'N/A'}</td>`; }
@@ -145,11 +144,19 @@
         });
 
         if(isSuperAdmin) {
+            // FIXED MESSAGES LISTENER
             db.collection("admin_messages").onSnapshot(snap => {
-                const list = document.getElementById('inbox-list'); list.innerHTML = "";
-                let msgs = []; snap.forEach(d => msgs.push({id: d.id, ...d.data()}));
+                const list = document.getElementById('inbox-list'); 
+                if(!list) return;
+                list.innerHTML = "";
+                let msgs = []; 
+                snap.forEach(d => msgs.push({id: d.id, ...d.data()}));
                 msgs.sort((a,b) => (b.date || 0) - (a.date || 0)).forEach(m => {
-                    list.innerHTML += `<div class="glass-card" style="margin-bottom:10px; font-size:12px;"><b style="color:var(--blue)">${m.type}</b> from ${m.college || 'User'}<br>${m.message || m.book}<div style="text-align:right"><button class="btn-sm" style="background:#ef4444" onclick="deleteMsg('${m.id}')">Del</button></div></div>`;
+                    list.innerHTML += `<div class="glass-card" style="margin-bottom:10px; font-size:12px;">
+                        <b style="color:var(--blue)">${m.type}</b> from ${m.college || m.user || 'User'}<br>
+                        ${m.message || m.book || ''}
+                        <div style="text-align:right"><button class="btn-sm" style="background:#ef4444" onclick="deleteMsg('${m.id}')">Del</button></div>
+                    </div>`;
                 });
             });
         }
@@ -162,7 +169,7 @@
         }); 
     }
 
-    // --- RE-RESTORED EXCELLENT LOG LOGIC ---
+    // --- RETAINED EXCELLENT LOG LOGIC ---
     function openReport(uid, name, role) { 
         activeUID = uid; document.getElementById('user-modal').classList.remove('hidden'); document.getElementById('modal-title').innerText = name; 
         if(isSuperAdmin) {
@@ -173,7 +180,7 @@
         if(logUnsubscribe) logUnsubscribe();
         
         const body = document.getElementById('log-body');
-        body.innerHTML = "<tr><td colspan='4'>Streaming Activity...</td></tr>";
+        body.innerHTML = "<tr><td colspan='4'>Syncing Logs...</td></tr>";
 
         logUnsubscribe = db.collection("activity_logs").where("userId", "==", uid).onSnapshot(snap => {
             let t=0, o=0, b=0, html="", logs=[];
@@ -187,7 +194,7 @@
                 html += `<tr><td>${d.type}<br><small>${d.activity || ''}</small></td><td>${start ? new Date(start).toLocaleTimeString() : '--'}</td><td>${end ? new Date(end).toLocaleTimeString() : 'Active'}</td><td>${fmt(dur)}</td></tr>`;
             });
             document.getElementById('modal-stats').innerHTML = `<div class="stat-grid"><div class="stat-box">Usage<br><b>${fmt(t)}</b></div><div class="stat-box">Online<br><b>${fmt(o)}</b></div><div class="stat-box">Borrowed<br><b>${fmt(b)}</b></div></div>`;
-            body.innerHTML = html || "<tr><td colspan='4'>No activity logged.</td></tr>";
+            document.getElementById('log-body').innerHTML = html || "<tr><td colspan='4'>No activity logged.</td></tr>";
         }, err => { body.innerHTML = "<tr><td colspan='4' style='color:red;'>Error Loading Logs.</td></tr>"; });
     }
 
@@ -209,7 +216,8 @@
     function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === 't-'+t)); document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', s.id !== t+'-section')); }
     function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => m.id !== id ? m.classList.remove('show') : null); document.getElementById(id).classList.toggle('show'); }
     async function deletePDF(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
-    async function deleteMsg(id) { await db.collection("admin_messages").doc(id).delete(); }
+    async function deleteMsg(id) { if(confirm("Delete message?")) await db.collection("admin_messages").doc(id).delete(); }
+    function checkBulkAccess() { if (!isSuperAdmin) { alert("Access Restricted."); document.getElementById('bulk-input').blur(); } }
 </script>
 </body>
 </html>
