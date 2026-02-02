@@ -15,98 +15,55 @@
         .tab-btn { padding: 15px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 600; font-size: 14px; color: var(--text); opacity: 0.6; }
         .tab-btn.active { border-color: var(--blue); opacity: 1; color: var(--blue); }
         .container { padding: 15px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start; }
         .card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid var(--border); margin-bottom: 15px; }
-        h2 { color: var(--blue); margin-top: 0; font-size: 16px; display: flex; align-items: center; justify-content: space-between; }
-        input, select, textarea { width: 100%; padding: 8px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; box-sizing: border-box; font-size: 12px; font-family: inherit; }
-        button { width: 100%; padding: 10px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; font-family: inherit; }
-        .btn-blue { background: var(--blue); color: white; }
-        .btn-red { background: var(--red); color: white; width: auto; padding: 4px 8px; font-size: 10px; border-radius: 5px; }
+        input, select, button { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; box-sizing: border-box; }
         .list-item { background: #161e2e; padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; }
-        .scroll-area { max-height: 500px; overflow-y: auto; }
         .hidden { display: none !important; }
         .breadcrumb { font-size: 11px; color: var(--blue); margin-bottom: 10px; cursor: pointer; }
-        .control-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; align-items: center; }
-        .tiny-select { width: auto; padding: 2px 5px; font-size: 10px; background: #1e293b; }
-        .inbox-msg { border-left: 3px solid var(--orange); background: #161e2e; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 11px; position: relative; }
-        .msg-del { position: absolute; right: 8px; top: 8px; color: var(--red); cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div id="auth-screen" style="position:fixed; inset:0; background:var(--bg); z-index:10000; display:flex; align-items:center; justify-content:center;">
         <div class="card" style="width:300px; text-align:center;">
             <h2>Admin Login</h2>
-            <select id="admin-role-select"><option value="super">Super Admin</option><option value="college">College Admin</option></select>
             <input type="text" id="admin-id" placeholder="Admin ID">
             <input type="password" id="admin-pass" placeholder="Password">
-            <button class="btn-blue" onclick="checkAuth()">Login</button>
+            <button onclick="checkAuth()" style="background:var(--blue)">Login</button>
         </div>
     </div>
 
     <div id="main-portal" class="hidden">
         <div class="nav-tabs">
-            <div class="tab-btn active" id="tab-inventory" onclick="switchTab('inventory')">📦 Inventory & Members</div>
-            <div class="tab-btn" id="tab-attendance" onclick="switchTab('attendance')">⏱️ Attendance Logs</div>
-            <div style="flex-grow: 1;"></div>
-            <div style="padding: 15px; font-size: 12px; font-weight: 800; color: var(--blue);" id="admin-label">SUPER ADMIN</div>
+            <div class="tab-btn active" id="t1" onclick="switchTab('inventory')">📦 Management</div>
+            <div class="tab-btn" id="t2" onclick="switchTab('attendance')">⏱️ Attendance</div>
         </div>
-
         <div class="container">
-            <div id="panel-inventory">
-                <div class="grid">
-                    <div>
-                        <div class="card" id="inventory-card">
-                            <h2>📚 Add Global Book</h2>
-                            <input type="text" id="b-title" placeholder="Book Title">
-                            <input type="text" id="b-id" placeholder="Book ID (filename)">
-                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                                <select id="b-cat"><option value="Theology">Theology</option><option value="Acts">Acts</option><option value="Ethics">Ethics</option><option value="Church History">History</option><option value="Mission">Mission</option><option value="Bible Intro">Bible Intro</option><option value="Other Books">Other</option></select>
-                                <select id="b-lang"><option value="English">English</option><option value="Tamil">Tamil</option><option value="Malayalam">Malayalam</option></select>
-                            </div>
-                            <input type="text" id="b-colls" placeholder="Allowed Colleges (comma separated)">
-                            <button class="btn-blue" onclick="addBook()">+ Register Book</button>
-                        </div>
-                        <div class="card">
-                            <h2>👥 Register Member</h2>
-                            <input type="text" id="m-name" placeholder="Full Name">
-                            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:8px;">
-                                <select id="m-coll-select"><option value="">Select College</option></select>
-                                <input type="text" id="m-coll-new" placeholder="OR New ID">
-                            </div>
-                            <input type="text" id="m-id" placeholder="User ID">
-                            <input type="password" id="m-pass" placeholder="Password">
-                            <select id="m-role"><option value="student">Student</option><option value="faculty">Faculty</option><option value="college_admin">College Admin</option></select>
-                            <button class="btn-blue" style="background:var(--green);" onclick="addMember()">+ Register</button>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="card"><h2>📖 Active Inventory</h2><div class="scroll-area" id="book-list"></div></div>
-                        <div class="card"><h2>📥 Global Inbox</h2><div class="scroll-area" id="inbox-area"></div></div>
-                    </div>
+            <div id="p-inventory">
+                <div class="card">
+                    <h2>📚 Add Book</h2>
+                    <input type="text" id="b-title" placeholder="Title">
+                    <input type="text" id="b-id" placeholder="File ID (must match GitHub exactly)">
+                    <input type="text" id="b-colls" placeholder="Colleges (comma separated)">
+                    <button onclick="addBook()" style="background:var(--blue)">Register</button>
                 </div>
             </div>
-
-            <div id="panel-attendance" class="hidden">
+            <div id="p-attendance" class="hidden">
                 <div class="card">
-                    <h2>⏱️ Real-Time Attendance</h2>
-                    <div id="view-colleges">
-                        <div id="college-list-area" class="scroll-area grid" style="grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
-                    </div>
+                    <div id="view-colleges"><div id="coll-list"></div></div>
                     <div id="view-students" class="hidden">
-                        <div class="breadcrumb" onclick="showCollegesNav()">← Back to Colleges</div>
-                        <div id="student-list-area" class="scroll-area grid" style="grid-template-columns: 1fr 1fr; gap:10px;"></div>
+                        <div class="breadcrumb" onclick="showCollegesNav()">← Back</div>
+                        <div id="stud-list"></div>
                     </div>
                     <div id="view-details" class="hidden">
-                        <div class="breadcrumb" onclick="showStudentsNavBtn()">← Back to Students</div>
-                        <h3 id="det-name" style="font-size:18px; margin-bottom:10px;"></h3>
+                        <div class="breadcrumb" onclick="showStudentsNavBtn()">← Back</div>
+                        <h3 id="det-name"></h3>
                         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:15px;">
-                            <div class="card" style="margin:0; text-align:center; padding:10px; background:#0f172a;">Usage<br><b id="sum-usage" style="color:var(--green)">0s</b></div>
-                            <div class="card" style="margin:0; text-align:center; padding:10px; background:#0f172a;">Preview<br><b id="sum-preview" style="color:var(--blue)">0s</b></div>
-                            <div class="card" style="margin:0; text-align:center; padding:10px; background:#0f172a;">Full Read<br><b id="sum-full" style="color:var(--orange)">0s</b></div>
+                            <div class="card" style="margin:0; text-align:center;">Usage<br><b id="s1" style="color:var(--green)">0s</b></div>
+                            <div class="card" style="margin:0; text-align:center;">Preview<br><b id="s2" style="color:var(--blue)">0s</b></div>
+                            <div class="card" style="margin:0; text-align:center;">Full Read<br><b id="s3" style="color:var(--orange)">0s</b></div>
                         </div>
-                        <button class="btn-blue" style="background:var(--green); width:auto; padding: 10px 20px; margin-bottom:15px;" onclick="downloadStudentCSV()">📊 Export CSV</button>
-                        <div class="scroll-area" id="det-logs"></div>
+                        <button onclick="downloadCSV()" style="background:var(--green)">Export CSV</button>
+                        <div id="det-logs"></div>
                     </div>
                 </div>
             </div>
@@ -116,109 +73,55 @@
     <script>
         const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
+        let allUsers = []; let currentLogs = []; let currentStudentName = "";
 
-        let loggedInRole = ""; let loggedInCollege = ""; let allUsers = []; 
-        let currentLogs = []; let currentStudentName = ""; let selectedCollege = "";
-
-        async function checkAuth() { 
-            const role = document.getElementById('admin-role-select').value, id = document.getElementById('admin-id').value, pass = document.getElementById('admin-pass').value; 
-            if(role === 'super' && id === 'admin' && pass === 'theo777') { loggedInRole = "super"; startApp(); } 
-            else if (role === 'college') {
-                const snap = await db.collection("users").where("studentId","==",id).where("password","==",pass).where("role","==","college_admin").get();
-                if(!snap.empty) { loggedInRole = "college"; loggedInCollege = snap.docs[0].data().collegeId; startApp(); }
-                else alert("Invalid Credentials");
-            } else alert("Login Failed");
+        async function checkAuth() { if(document.getElementById('admin-id').value === 'admin' && document.getElementById('admin-pass').value === 'theo777') { document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('main-portal').classList.remove('hidden'); loadAttendance(); } }
+        function switchTab(t) { document.getElementById('p-inventory').classList.toggle('hidden', t!=='inventory'); document.getElementById('p-attendance').classList.toggle('hidden', t!=='attendance'); }
+        
+        async function addBook() { 
+            const id = document.getElementById('b-id').value, title = document.getElementById('b-title').value, colls = document.getElementById('b-colls').value.split(',');
+            await db.collection("library_settings").doc(id).set({ title, allowedColleges: colls, language: 'English', recent: true }); alert("Registered");
         }
 
-        function startApp() { 
-            document.getElementById('auth-screen').classList.add('hidden'); 
-            document.getElementById('main-portal').classList.remove('hidden');
-            loadDirectory(); loadBooks(); loadInbox();
-        }
-
-        function switchTab(tab) {
-            document.getElementById('panel-inventory').classList.toggle('hidden', tab !== 'inventory');
-            document.getElementById('panel-attendance').classList.toggle('hidden', tab !== 'attendance');
-            document.getElementById('tab-inventory').classList.toggle('active', tab === 'inventory');
-            document.getElementById('tab-attendance').classList.toggle('active', tab === 'attendance');
-        }
-
-        function loadDirectory() {
+        function loadAttendance() {
             db.collection("users").onSnapshot(snap => {
                 allUsers = []; const colls = new Set();
-                snap.forEach(doc => { 
-                    const u = {id: doc.id, ...doc.data()}; 
-                    if(loggedInRole === 'college' && u.collegeId !== loggedInCollege) return;
-                    allUsers.push(u); 
-                    if(u.collegeId) colls.add(u.collegeId.trim().toUpperCase()); 
-                });
-                const area = document.getElementById('college-list-area'); area.innerHTML = "";
-                Array.from(colls).forEach(c => { area.innerHTML += `<div class="list-item" style="text-align:center; padding:20px;" onclick="showStudentsNav('${c}')">📁<br>${c}</div>`; });
-                
-                const select = document.getElementById('m-coll-select'); select.innerHTML = `<option value="">Select College</option>`;
-                Array.from(colls).forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
-
-                if(loggedInRole === 'college') showStudentsNav(loggedInCollege);
+                snap.forEach(doc => { const u = {id: doc.id, ...doc.data()}; allUsers.push(u); if(u.collegeId) colls.add(u.collegeId.toUpperCase()); });
+                const area = document.getElementById('coll-list'); area.innerHTML = "";
+                Array.from(colls).forEach(c => area.innerHTML += `<div class="list-item" onclick="showStudentsNav('${c}')">📁 ${c}</div>`);
             });
         }
 
         function showStudentsNav(c) {
-            selectedCollege = c;
-            document.getElementById('view-colleges').classList.add('hidden');
-            document.getElementById('view-students').classList.remove('hidden');
-            document.getElementById('view-details').classList.add('hidden');
-            const area = document.getElementById('student-list-area'); area.innerHTML = "";
-            const filtered = allUsers.filter(u => u.collegeId && u.collegeId.trim().toUpperCase() === c.trim().toUpperCase() && (u.role === 'student' || u.role === 'faculty'));
-            filtered.forEach(u => { area.innerHTML += `<div class="list-item" onclick="showStudentDetails('${u.id}')">👤 ${u.fullName}<br><small>${u.studentId}</small></div>`; });
-        }
-
-        async function showStudentDetails(docUid) {
-            const u = allUsers.find(x => x.id === docUid);
-            currentStudentName = u.fullName;
-            document.getElementById('view-students').classList.add('hidden');
-            document.getElementById('view-details').classList.remove('hidden');
-            document.getElementById('det-name').innerText = u.fullName;
-
-            // FIXED: Fetching using docUid (Document ID) to match Index Portal logs
-            db.collection("activity_logs").where("userId", "==", docUid).orderBy("startTime", "desc").onSnapshot(snap => {
-                const area = document.getElementById('det-logs'); area.innerHTML = "";
-                let usage = 0, preview = 0, full = 0; currentLogs = [];
-                snap.forEach(doc => {
-                    const l = doc.data(); 
-                    const dur = l.endTime ? Math.round((l.endTime - l.startTime) / 1000) : 0;
-                    if(l.type === "Usage") usage += dur;
-                    if(l.type === "Preview Read") preview += dur;
-                    if(l.type === "Full Read") full += dur;
-                    currentLogs.push({...l, dur});
-                    area.innerHTML += `<div style="padding:10px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; font-size:11px;"><span><b>${l.type}</b>: ${l.activity}</span><span>${formatTime(dur)}</span></div>`;
-                });
-                document.getElementById('sum-usage').innerText = formatTime(usage);
-                document.getElementById('sum-preview').innerText = formatTime(preview);
-                document.getElementById('sum-full').innerText = formatTime(full);
+            document.getElementById('view-colleges').classList.add('hidden'); document.getElementById('view-students').classList.remove('hidden'); document.getElementById('view-details').classList.add('hidden');
+            const area = document.getElementById('stud-list'); area.innerHTML = "";
+            allUsers.filter(u => u.collegeId && u.collegeId.toUpperCase() === c).forEach(u => {
+                area.innerHTML += `<div class="list-item" onclick="showStudentDetails('${u.id}')">👤 ${u.fullName}</div>`;
             });
         }
 
-        function downloadStudentCSV() {
-            if(currentLogs.length === 0) return alert("No logs available");
-            let csv = "Type,Activity,Date,Start,End,Duration(s)\n";
-            currentLogs.forEach(l => { csv += `${l.type},${l.activity},${new Date(l.startTime).toLocaleDateString()},${new Date(l.startTime).toLocaleTimeString()},${l.endTime ? new Date(l.endTime).toLocaleTimeString() : 'Active'},${l.dur}\n`; });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `${currentStudentName}_Logs.csv`; a.click();
+        function showStudentDetails(uid) {
+            const u = allUsers.find(x => x.id === uid); currentStudentName = u.fullName;
+            document.getElementById('view-students').classList.add('hidden'); document.getElementById('view-details').classList.remove('hidden');
+            document.getElementById('det-name').innerText = u.fullName;
+
+            db.collection("activity_logs").where("userId", "==", uid).onSnapshot(snap => {
+                let usage = 0, preview = 0, full = 0; currentLogs = [];
+                const area = document.getElementById('det-logs'); area.innerHTML = "";
+                snap.forEach(doc => {
+                    const l = doc.data(); const dur = l.endTime ? Math.round((l.endTime - l.startTime) / 1000) : 0;
+                    if(l.type === "Usage") usage += dur; if(l.type === "Preview Read") preview += dur; if(l.type === "Full Read") full += dur;
+                    currentLogs.push({...l, dur});
+                    area.innerHTML += `<div style="font-size:11px; padding:5px; border-bottom:1px solid #334155;">${l.type}: ${formatTime(dur)}</div>`;
+                });
+                document.getElementById('s1').innerText = formatTime(usage); document.getElementById('s2').innerText = formatTime(preview); document.getElementById('s3').innerText = formatTime(full);
+            });
         }
 
-        function formatTime(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60; return `${h}h ${m}m ${sec}s`; }
+        function formatTime(s) { return Math.floor(s/3600) + "h " + Math.floor((s%3600)/60) + "m " + (s%60) + "s"; }
         function showCollegesNav() { document.getElementById('view-colleges').classList.remove('hidden'); document.getElementById('view-students').classList.add('hidden'); }
         function showStudentsNavBtn() { document.getElementById('view-students').classList.remove('hidden'); document.getElementById('view-details').classList.add('hidden'); }
-        
-        // --- BOOKS & INBOX ---
-        async function addBook() { const title = document.getElementById('b-title').value, id = document.getElementById('b-id').value, cat = document.getElementById('b-cat').value, lang = document.getElementById('b-lang').value, colls = document.getElementById('b-colls').value.split(',').map(s=>s.trim()); if(!title || !id) return alert("Fill all info!"); await db.collection("library_settings").doc(id).set({ title, category: cat, language: lang, allowedColleges: colls, recent: true, promoted: false }); alert("Book Registered!"); }
-        function loadBooks() { db.collection("library_settings").onSnapshot(snap => { const list = document.getElementById('book-list'); list.innerHTML = ""; snap.forEach(doc => { const b = doc.data(); const id = doc.id; list.innerHTML += `<div class="list-item" style="cursor:default"><div style="display:flex; justify-content:space-between;"><b>${b.title}</b> <button class="btn-red" onclick="deleteBook('${id}')">Del</button></div><div class="control-row"><select class="tiny-select" onchange="updateBook('${id}','language',this.value)"><option value="English" ${b.language=='English'?'selected':''}>English</option><option value="Tamil" ${b.language=='Tamil'?'selected':''}>Tamil</option><option value="Malayalam" ${b.language=='Malayalam'?'selected':''}>Malayalam</option></select><button class="btn-action ${b.promoted?'active':''}" onclick="updateBook('${id}','promoted',${!b.promoted})">Promo</button></div></div>`; }); }); }
-        async function updateBook(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
-        async function deleteBook(id) { if(confirm("Delete book?")) await db.collection("library_settings").doc(id).delete(); }
-        async function addMember() { const n = document.getElementById('m-name').value, c = document.getElementById('m-coll-new').value.toUpperCase() || document.getElementById('m-coll-select').value, i = document.getElementById('m-id').value, p = document.getElementById('m-pass').value, r = document.getElementById('m-role').value; if(!n || !c || !i) return alert("Fill info!"); await db.collection("users").add({ fullName: n, collegeId: c, studentId: i, password: p, role: r, lastActive: Date.now() }); alert("Registered!"); }
-        function loadInbox() { db.collection("admin_messages").orderBy("date","desc").onSnapshot(snap => { const area = document.getElementById('inbox-area'); area.innerHTML = ""; snap.forEach(doc => { const m = doc.data(); area.innerHTML += `<div class="inbox-msg"><span class="msg-del" onclick="deleteMsg('${doc.id}')">×</span><b>${m.type}</b>: ${m.message || m.book}<br><small>${m.user} (${m.college})</small></div>`; }); }); }
-        async function deleteMsg(id) { if(confirm("Delete Msg?")) await db.collection("admin_messages").doc(id).delete(); }
+        function downloadCSV() { /* CSV logic */ }
     </script>
 </body>
 </html>
