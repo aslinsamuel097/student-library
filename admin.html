@@ -1,8 +1,3 @@
-Here is the **full code** for your Super Admin (`admin.html`). I have integrated the **Fixed Attendance Logic**, the **CSV Report Button**, and ensured all your layout, UI, and live inventory options are exactly as they were.
-
-### TheoLib Command Center (`admin.html`)
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,7 +34,6 @@ Here is the **full code** for your Super Admin (`admin.html`). I have integrated
     </style>
 </head>
 <body>
-
     <div id="auth-screen" style="position:fixed; inset:0; background:var(--bg); z-index:10000; display:flex; align-items:center; justify-content:center;">
         <div class="card" style="width:300px; text-align:center;">
             <h2 style="justify-content:center; margin-bottom:15px;">Admin Login</h2>
@@ -87,21 +81,21 @@ Here is the **full code** for your Super Admin (`admin.html`). I have integrated
 
             <div>
                 <div class="card">
-                    <h2>📖 Active Inventory (Live Options)</h2>
+                    <h2>📖 Inventory Controls</h2>
                     <div class="scroll-area" id="book-list"></div>
                 </div>
 
                 <div class="card">
-                    <h2>⏱️ Attendance & Drill-Down</h2>
+                    <h2>⏱️ Attendance Drill-Down</h2>
                     <button class="btn-blue" style="margin-bottom:10px; background:var(--green)" onclick="downloadUsageCSV()">📊 Download CSV Report</button>
                     <div id="view-colleges"><div id="college-list-area" class="scroll-area"></div></div>
-                    <div id="view-students" class="hidden"><div class="breadcrumb" onclick="showColleges()">← Back to Colleges</div><div id="student-list-area" class="scroll-area"></div></div>
+                    <div id="view-students" class="hidden"><div class="breadcrumb" onclick="showCollegesNav()">← Back to Colleges</div><div id="student-list-area" class="scroll-area"></div></div>
                     <div id="view-details" class="hidden">
                         <div class="breadcrumb" onclick="showStudentsNav()">← Back to Students</div>
                         <h3 id="det-name" style="font-size:14px; margin:0;"></h3>
-                        <div id="det-summary" style="display:flex; justify-content:space-between; background:#161e2e; padding:8px; border-radius:8px; font-size:11px; margin:10px 0;">
-                            <div>Usage: <b id="sum-usage" style="color:var(--green)">0s</b></div>
-                            <div>Read: <b id="sum-read" style="color:var(--blue)">0s</b></div>
+                        <div id="det-summary" style="display:flex; flex-direction:column; background:#161e2e; padding:8px; border-radius:8px; font-size:11px; margin:10px 0; gap:5px;">
+                            <div id="sum-usage">Usage: <b>0s</b></div>
+                            <div id="sum-read">Read: <b>0s</b></div>
                         </div>
                         <div class="scroll-area" id="det-logs" style="font-size:10px;"></div>
                     </div>
@@ -119,7 +113,7 @@ Here is the **full code** for your Super Admin (`admin.html`). I have integrated
         const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
 
-        let loggedInRole = ""; let loggedInCollege = ""; let collegeList = []; let allUsers = []; let selectedCollege = "";
+        let loggedInRole = ""; let loggedInCollege = ""; let collegeList = []; let allUsers = [];
 
         async function checkAuth() {
             const role = document.getElementById('admin-role-select').value, id = document.getElementById('admin-id').value, pass = document.getElementById('admin-pass').value;
@@ -209,7 +203,6 @@ Here is the **full code** for your Super Admin (`admin.html`). I have integrated
             alert("Registered!");
         }
 
-        // --- FIXED ATTENDANCE LOGIC ---
         function loadAttendance() {
             db.collection("users").onSnapshot(snap => {
                 allUsers = []; const colls = new Set();
@@ -225,7 +218,7 @@ Here is the **full code** for your Super Admin (`admin.html`). I have integrated
         }
 
         function showStudents(c) {
-            selectedCollege = c; document.getElementById('view-colleges').classList.add('hidden'); document.getElementById('view-students').classList.remove('hidden'); document.getElementById('view-details').classList.add('hidden');
+            document.getElementById('view-colleges').classList.add('hidden'); document.getElementById('view-students').classList.remove('hidden'); document.getElementById('view-details').classList.add('hidden');
             const area = document.getElementById('student-list-area'); area.innerHTML = "";
             allUsers.filter(u => u.collegeId === c && (u.role === 'student' || u.role === 'faculty')).forEach(u => area.innerHTML += `<div class="list-item" onclick="showDetails('${u.id}')">👤 ${u.fullName} (${u.studentId})</div>`);
         }
@@ -236,58 +229,51 @@ Here is the **full code** for your Super Admin (`admin.html`). I have integrated
             document.getElementById('view-students').classList.add('hidden'); document.getElementById('view-details').classList.remove('hidden');
             document.getElementById('det-name').innerText = u.fullName;
             
-            const logArea = document.getElementById('det-logs'); logArea.innerHTML = "Loading...";
-            
             db.collection("activity_logs").where("userId","==",uid).orderBy("startTime","desc").onSnapshot(snap => {
-                logArea.innerHTML = ""; let usage = 0; let read = 0;
+                const area = document.getElementById('det-logs'); area.innerHTML = "";
+                let usage = 0; let readPrev = 0; let readFull = 0;
                 snap.forEach(doc => {
                     const l = doc.data(); const d = l.endTime ? Math.round((l.endTime - l.startTime)/1000) : 0;
-                    if(l.type.includes("Usage") || l.type.includes("Dashboard")) usage += d; 
-                    if(l.type.includes("Read")) read += d;
-                    logArea.innerHTML += `<div style="padding:4px; border-bottom:1px solid #334155; display:flex; justify-content:space-between;"><span>${l.type}</span><span>${d}s</span></div>`;
+                    if(l.type === "Usage") usage += d;
+                    if(l.type === "Online Read") readPrev += d;
+                    if(l.type === "Full Read") readFull += d;
+                    area.innerHTML += `<div style="padding:4px; border-bottom:1px solid #334155; display:flex; justify-content:space-between;"><span>${l.type}: ${l.activity}</span><span>${formatTime(d)}</span></div>`;
                 });
-                document.getElementById('sum-usage').innerText = formatTime(usage);
-                document.getElementById('sum-read').innerText = formatTime(read);
+                document.getElementById('sum-usage').innerHTML = `Usage: <b>${formatTime(usage)}</b>`;
+                document.getElementById('sum-read').innerHTML = `Preview: <b>${formatTime(readPrev)}</b> | Full: <b>${formatTime(readFull)}</b>`;
             });
         }
 
         async function downloadUsageCSV() {
             const snap = await db.collection("activity_logs").get();
             const logs = []; snap.forEach(doc => logs.push(doc.data()));
-            let csv = "Name,College,Role,Usage(s),Reading(s)\n";
+            let csv = "Name,College,Role,Usage(s),Preview(s),FullRead(s)\n";
             allUsers.forEach(u => {
-                let ut = 0, rt = 0;
+                let ut = 0, pt = 0, ft = 0;
                 logs.filter(l => l.userId === u.id).forEach(l => {
                     const d = l.endTime ? (l.endTime - l.startTime)/1000 : 0;
-                    if(l.type.includes("Usage") || l.type.includes("Dashboard")) ut += d;
-                    if(l.type.includes("Read")) rt += d;
+                    if(l.type === "Usage") ut += d;
+                    if(l.type === "Online Read") pt += d;
+                    if(l.type === "Full Read") ft += d;
                 });
-                csv += `${u.fullName},${u.collegeId},${u.role},${Math.round(ut)},${Math.round(rt)}\n`;
+                csv += `${u.fullName},${u.collegeId},${u.role},${Math.round(ut)},${Math.round(pt)},${Math.round(ft)}\n`;
             });
             const link = document.createElement("a");
             link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
-            link.download = "TheoLib_Report.csv"; link.click();
+            link.download = "TheoLib_Usage_Report.csv"; link.click();
         }
 
         function formatTime(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60; return `${h}h ${m}m ${sec}s`; }
-        function showColleges() { document.getElementById('view-colleges').classList.remove('hidden'); document.getElementById('view-students').classList.add('hidden'); }
+        function showCollegesNav() { document.getElementById('view-colleges').classList.remove('hidden'); document.getElementById('view-students').classList.add('hidden'); }
         function showStudentsNav() { document.getElementById('view-students').classList.remove('hidden'); document.getElementById('view-details').classList.add('hidden'); }
-
         function loadInbox() {
             const q = loggedInRole === 'super' ? db.collection("admin_messages") : db.collection("admin_messages").where("college","==",loggedInCollege);
             q.orderBy("date","desc").onSnapshot(snap => {
                 const area = document.getElementById('inbox-area'); area.innerHTML = "";
-                snap.forEach(doc => {
-                    const m = doc.data();
-                    area.innerHTML += `<div class="inbox-msg"><span class="msg-del" onclick="deleteMsg('${doc.id}')">×</span><b>${m.type}</b>: ${m.message || m.book}<br><small>${m.user} (${m.college})</small></div>`;
-                });
+                snap.forEach(doc => { const m = doc.data(); area.innerHTML += `<div class="inbox-msg"><span class="msg-del" onclick="deleteMsg('${doc.id}')">×</span><b>${m.type}</b>: ${m.message || m.book}<br><small>${m.user} (${m.college})</small></div>`; });
             });
         }
         async function deleteMsg(id) { if(confirm("Delete?")) await db.collection("admin_messages").doc(id).delete(); }
     </script>
 </body>
 </html>
-
-```
-
-Would you like me to help you with anything else before your submission?
