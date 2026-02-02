@@ -3,192 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TheoLib Admin - Master Command</title>
+    <title>TheoLib - Super Admin</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --blue: #3b82f6; --orange: #f97316; --green: #10b981; --purple: #a855f7; --bg: #0b1120; --card-bg: #1e293b; --text-main: #f8fafc; --text-sub: #94a3b8; --border: #334155; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
-        #auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: var(--card-bg); padding: 30px; border-radius: 24px; text-align: center; border: 1px solid var(--border); width: 300px; }
-        .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; }
-        .tab-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; background: var(--card-bg); color: var(--text-sub); border: 1px solid var(--border); transition: 0.3s; white-space: nowrap; }
-        .tab-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
-        .badge { background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; top: -5px; right: -5px; border: 2px solid var(--bg); font-weight: 800; }
-        .glass-card { background: var(--card-bg); border-radius: 20px; padding: 25px; border: 1px solid var(--border); margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        td, th { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; }
-        .btn-sm { padding: 8px 15px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; font-weight: 600; color: white; }
-        .user-folder { background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-box { background: #0f172a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
-        .dropdown-menu { display: none; position: absolute; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; z-index: 100; min-width: 180px; padding: 10px; top: 40px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .show { display: block; }
-        .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; color: var(--text-sub); }
-        .dropdown-item:hover { background: #0f172a; color: white; }
-        #user-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 6000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .modal-content { background: var(--card-bg); width: 100%; max-width: 900px; border-radius: 24px; padding: 30px; max-height: 90vh; border: 1px solid var(--border); overflow-y: auto; }
-        .hidden { display: none !important; }
-        .login-field { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; margin-bottom: 12px; outline: none; box-sizing: border-box; }
+        :root { --blue: #3b82f6; --orange: #f97316; --green: #10b981; --red: #ef4444; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --border: #334155; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid var(--border); }
+        h2 { color: var(--blue); margin-top: 0; font-size: 18px; }
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-blue { background: var(--blue); color: white; }
+        .btn-orange { background: var(--orange); color: white; }
+        .btn-red { background: var(--red); color: white; padding: 5px 10px; width: auto; font-size: 11px; }
+        .list-item { background: var(--bg); padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border: 1px solid var(--border); }
+        .tag-select { width: auto; margin-bottom: 0; padding: 4px; font-size: 11px; margin-right: 10px; }
+        .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .log-table th, .log-table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+        .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }
+        .scroll-area { max-height: 400px; overflow-y: auto; }
+        #fix-db-banner { background: var(--orange); padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
-    <div id="auth-overlay"><div class="login-card"><h2>Admin Login</h2><input type="text" id="acid" class="login-field" placeholder="ID"><input type="password" id="apass" class="login-field" placeholder="Pass"><button class="btn-sm" style="background:var(--blue); width:100%; padding:15px;" onclick="handleAdminLogin()">Login</button></div></div>
-    
-    <div id="master-panel" class="hidden">
-        <div class="nav-tabs">
-            <button id="t-inv" class="tab-btn active" onclick="switchTab('inv')">Inventory</button>
-            <button id="t-att" class="tab-btn" onclick="switchTab('att')">Attendance</button>
-            <button id="t-stud" class="tab-btn" onclick="switchTab('stud')">Registration</button>
-            <button id="t-nom" class="tab-btn" onclick="switchTab('nom')">Nominations <span id="nom-badge" class="badge hidden">0</span></button>
-            <button id="t-msg" class="tab-btn" onclick="switchTab('msg')">Inbox <span id="msg-badge" class="badge hidden">0</span></button>
-            <button id="t-help" class="tab-btn hidden" onclick="switchTab('help')">Contact Admin</button>
-            <button class="tab-btn" style="background:#ef4444; color:white; margin-left:auto;" onclick="location.reload()">Logout</button>
-        </div>
 
-        <div id="inv-section" class="glass-card">
-            <div id="add-book-form" class="hidden" style="margin-bottom:25px; padding:20px; border:1px dashed var(--blue); border-radius:15px;">
-                <h3>📚 Add New Book Entry</h3>
-                <input type="text" id="new-title" class="login-field" placeholder="Title">
-                <select id="new-cat" class="login-field">
-                    <option value="">Category</option>
-                    <option value="Theology">Theology</option><option value="Church History">Church History</option>
-                    <option value="Mission">Mission</option><option value="Bible Intro">Bible Intro</option>
-                    <option value="Acts">Acts</option><option value="Ethics">Ethics</option><option value="Other Books">Other Books</option>
-                </select>
-                <input type="text" id="new-access" class="login-field" placeholder="Allowed Colleges">
-                <button class="btn-sm" style="background:var(--green); width:100%;" onclick="addNewBook()">Add Book</button>
-            </div>
-            <table><thead><tr><th>Title</th><th>Access</th><th>Cat</th><th>Promo</th><th>Del</th></tr></thead><tbody id="inventory-list"></tbody></table>
-        </div>
-
-        <div id="att-section" class="hidden glass-card">
-            <div id="coll-selector-div"><select id="mon-coll" onchange="loadAttendanceList(this.value)" class="login-field" style="max-width:250px;"><option value="">Select College</option><option value="IMC26">IMC26</option><option value="ASLIN26">ASLIN26</option></select></div>
-            <div id="attendance-user-list"></div>
-        </div>
-
-        <div id="stud-section" class="hidden glass-card">
-            <h2>📤 Registration</h2>
-            <div id="reg-container"><textarea id="bulk-input" class="login-field" style="height:100px;" placeholder="Name, CollID, StudentID, Pass, Role"></textarea></div>
-            <p id="reg-locked-msg" class="hidden" style="color:var(--orange); font-weight:600;">Contact administrator to add members.</p>
-        </div>
-
-        <div id="msg-section" class="hidden glass-card"><div style="display:flex; justify-content:space-between; align-items:center;"><h2>📥 Inbox</h2><button class="btn-sm" style="background:var(--orange);" onclick="refreshInbox()">🔄 Refresh</button></div><div id="inbox-list"></div></div>
-        <div id="nom-section" class="hidden glass-card"><h2>📥 Nominations</h2><div id="nomination-list"></div></div>
-        <div id="help-section" class="hidden glass-card"><h2>📞 Contact Super Admin</h2><textarea id="help-msg" class="login-field" style="height:150px;"></textarea><button class="btn-sm" style="background:var(--blue); width:100%;" onclick="sendAdminHelp()">Send</button></div>
+    <div class="header">
+        <h1>TheoLib Super Admin</h1>
+        <button onclick="location.reload()" style="width:auto; padding:8px 15px;">🔄 Refresh Data</button>
     </div>
 
-    <div id="user-modal" class="hidden">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:space-between;"><h3 id="modal-title">Log</h3><div style="display:flex; gap:10px;"><button onclick="downloadCSV()" class="btn-sm" style="background:var(--blue);">📥 CSV</button><button onclick="closeModal()" class="btn-sm" style="background:#ef4444;">X</button></div></div>
-            
-            <div id="role-change-box" class="glass-card" style="padding:15px; margin-top:15px; border-color:var(--purple);">
-                <label style="font-size:11px;">Update User Role:</label>
-                <div style="display:flex; gap:10px; margin-top:5px;">
-                    <select id="new-role-select" class="login-field" style="margin:0; flex:1;"><option value="student">Student</option><option value="faculty">Faculty</option></select>
-                    <button class="btn-sm" style="background:var(--purple);" onclick="changeUserRole()">Update Role</button>
-                </div>
+    <div id="fix-db-banner">
+        <span>⚠️ <b>Database Sync Required:</b> Tag all untagged books as "English" to ensure visibility.</span>
+        <button onclick="fixMissingLanguages()" style="width:auto; background:white; color:black;">Fix Now</button>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>📚 Add New Book</h2>
+            <input type="text" id="b-title" placeholder="Book Title">
+            <input type="text" id="b-id" placeholder="Book ID (Must match PDF filename)">
+            <select id="b-cat">
+                <option value="Theology">Theology</option>
+                <option value="Church History">Church History</option>
+                <option value="Mission">Mission</option>
+                <option value="Bible Intro">Bible Intro</option>
+                <option value="Acts">Acts of Apostles</option>
+                <option value="Ethics">Christian Ethics</option>
+                <option value="Other Books">Other Books</option>
+            </select>
+            <select id="b-lang">
+                <option value="English">English</option>
+                <option value="Tamil">Tamil</option>
+                <option value="Malayalam">Malayalam</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="text" id="b-colls" placeholder="Allowed Colleges (e.g. IMC26, ASLIN26)">
+            <button class="btn-blue" onclick="addBook()">Upload to Library</button>
+
+            <h2 style="margin-top:20px;">📖 Existing Inventory</h2>
+            <div class="scroll-area" id="book-list">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h2>⏱️ Student Activity Logs (Total Usage)</h2>
+            <div class="scroll-area">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Total App Usage</th>
+                            <th>Total Full Reading</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usage-summary">
+                        </tbody>
+                </table>
             </div>
 
-            <div id="modal-stats" style="margin-top:15px;"></div>
-            <table style="margin-top:20px;"><thead><tr><th>Activity</th><th>Start</th><th>End</th><th>Duration</th></tr></thead><tbody id="log-body"></tbody></table>
+            <h2 style="margin-top:20px;">📜 Raw Activity Feed</h2>
+            <div class="scroll-area" id="raw-logs">Loading logs...</div>
         </div>
     </div>
 
-<script>
-    const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
-    firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
-    const adminAccounts = { "aslin": "Phlagon@28", "IMC26": "IMC26@theo", "ASLIN26": "ASLIN26@theo" };
-    let activeUID = "", activeName = "", isSuper = false, loggedID = "", logUnsub = null, currentLogs = [];
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
+        firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
 
-    function handleAdminLogin() {
-        const id = document.getElementById('acid').value, p = document.getElementById('apass').value;
-        if(adminAccounts[id] === p) {
-            isSuper = (id === "aslin"); loggedID = id;
-            document.getElementById('auth-overlay').classList.add('hidden'); document.getElementById('master-panel').classList.remove('hidden');
-            if(!isSuper) { document.getElementById('t-msg').classList.add('hidden'); document.getElementById('t-nom').classList.add('hidden'); document.getElementById('t-help').classList.remove('hidden'); document.getElementById('reg-container').classList.add('hidden'); document.getElementById('reg-msg').classList.remove('hidden'); document.getElementById('coll-selector-div').classList.add('hidden'); loadAttendanceList(id); }
-            else { document.getElementById('add-book-form').classList.remove('hidden'); }
-            initAdmin();
-        } else alert("Denied");
-    }
+        // --- BOOK LOGIC ---
+        async function addBook() {
+            const title = document.getElementById('b-title').value;
+            const id = document.getElementById('b-id').value;
+            const cat = document.getElementById('b-cat').value;
+            const lang = document.getElementById('b-lang').value;
+            const colls = document.getElementById('b-colls').value.split(',').map(s => s.trim());
 
-    function initAdmin() {
-        db.collection("library_settings").onSnapshot(snap => {
-            const list = document.getElementById('inventory-list'); list.innerHTML = "";
-            snap.forEach(doc => {
-                const b = doc.data(), id = doc.id, allowed = b.allowedColleges || [];
-                const cats = ['Theology','Church History','Mission','Bible Intro','Acts','Ethics','Other Books'];
-                list.innerHTML += `<tr><td><b>${b.title}</b></td><td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--purple)" onclick="toggleM('a-${id}')">Access</button><div id="a-${id}" class="dropdown-menu">${Object.keys(adminAccounts).filter(c=>c!=='aslin').map(c => `<div class="dropdown-item" onclick="toggleAccess('${id}','${c}',${allowed.includes(c)})">${c} ${allowed.includes(c)?'✅':''}</div>`).join('')}</div>` : 'Restricted'}</td><td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--green)" onclick="toggleM('c-${id}')">${b.category || 'Cat'}</button><div id="c-${id}" class="dropdown-menu">${cats.map(c => `<div class="dropdown-item" onclick="updF('${id}','category','${c}')">${c}</div>`).join('')}</div>` : b.category}</td><td style="position:relative;">${isSuper ? `<button class="btn-sm" style="background:var(--orange)" onclick="toggleM('p-${id}')">Promo</button><div id="p-${id}" class="dropdown-menu"><div class="dropdown-item" onclick="updF('${id}','recent',${!b.recent})">Recent ${b.recent?'✅':''}</div><div class="dropdown-item" onclick="updF('${id}','trending',${!b.trending})">Trending ${b.trending?'✅':''}</div></div>` : 'None'}</td><td>${isSuper ? `<button class="btn-sm" style="background:red" onclick="deletePDF('${id}')">🗑️</button>` : 'None'}</td></tr>`;
+            if(!title || !id) return alert("Fill fields!");
+            await db.collection("library_settings").doc(id).set({
+                title, category: cat, language: lang, allowedColleges: colls, recent: true
             });
-        });
-        if(isSuper) refreshInbox();
-    }
+            alert("Book added!"); location.reload();
+        }
 
-    // UPDATED: ACTIVE SEGMENT ATTENDANCE LOGIC
-    async function openReport(uid, name, role) {
-        activeUID = uid; activeName = name; document.getElementById('user-modal').classList.remove('hidden');
-        document.getElementById('modal-title').innerText = name;
-        document.getElementById('new-role-select').value = role || 'student';
-        if (logUnsub) logUnsub();
-        logUnsub = db.collection("activity_logs").where("userId", "==", uid).onSnapshot(snap => {
-            let usage=0, online=0, full=0, rowsHtml=""; currentLogs = [];
-            snap.forEach(d => { currentLogs.push(d.data()); });
-            currentLogs.sort((x, y) => (y.startTime || 0) - (x.startTime || 0));
-
-            currentLogs.forEach(data => {
-                // Logic: If user is actively looking at the page/pdf, endTime is null. 
-                // We use Date.now() to calculate the current "live" duration.
-                const end = data.endTime ? data.endTime : Date.now();
-                const dur = Math.floor((end - data.startTime) / 1000);
-                
-                if(data.type === "Usage") usage += dur; 
-                if(data.type === "Online Read") online += dur; 
-                if(data.type === "Full Read") full += dur;
-
-                rowsHtml += `<tr><td>${data.type}<br><small>${data.activity || ''}</small></td><td>${new Date(data.startTime).toLocaleTimeString()}</td><td>${data.endTime ? new Date(data.endTime).toLocaleTimeString() : '<span style="color:var(--green)">Active</span>'}</td><td>${fmt(dur)}</td></tr>`;
+        function loadBooks() {
+            db.collection("library_settings").onSnapshot(snap => {
+                const list = document.getElementById('book-list');
+                list.innerHTML = "";
+                snap.forEach(doc => {
+                    const b = doc.data();
+                    const currentLang = b.language || "English";
+                    list.innerHTML += `
+                    <div class="list-item">
+                        <span>${b.title}</span>
+                        <div>
+                            <select class="tag-select" onchange="updateLang('${doc.id}', this.value)">
+                                <option value="English" ${currentLang==='English'?'selected':''}>EN</option>
+                                <option value="Tamil" ${currentLang==='Tamil'?'selected':''}>TM</option>
+                                <option value="Malayalam" ${currentLang==='Malayalam'?'selected':''}>ML</option>
+                                <option value="Hindi" ${currentLang==='Hindi'?'selected':''}>HN</option>
+                                <option value="Other" ${currentLang==='Other'?'selected':''}>OT</option>
+                            </select>
+                            <button class="btn-red" onclick="deleteBook('${doc.id}')">Del</button>
+                        </div>
+                    </div>`;
+                });
             });
-            document.getElementById('modal-stats').innerHTML = `<div class="stat-grid"><div class="stat-box">App Usage<br><b>${fmt(usage)}</b></div><div class="stat-box">Online Read<br><b>${fmt(online)}</b></div><div class="stat-box">Full Read<br><b>${fmt(full)}</b></div></div>`;
-            document.getElementById('log-body').innerHTML = rowsHtml || "<tr><td colspan='4'>No activity</td></tr>";
-        });
-    }
+        }
 
-    function downloadCSV() {
-        if (!currentLogs.length) return alert("No logs");
-        let csv = "Activity,Date,Duration\n";
-        currentLogs.forEach(d => { 
-            const end = d.endTime ? d.endTime : Date.now();
-            csv += `"${d.type} - ${d.activity || ''}",${new Date(d.startTime).toLocaleDateString()},${fmt(Math.floor((end - d.startTime) / 1000))}\n`; 
-        });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-        a.download = `${activeName}_Report.csv`; a.click();
-    }
+        async function updateLang(id, lang) { await db.collection("library_settings").doc(id).update({ language: lang }); }
+        async function deleteBook(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
 
-    function refreshInbox() {
-        db.collection("admin_messages").orderBy("date", "desc").onSnapshot(snap => {
-            const list = document.getElementById('inbox-list'); const nomList = document.getElementById('nomination-list');
-            list.innerHTML = nomList.innerHTML = ""; let n=0, m=0;
-            snap.forEach(doc => {
-                const d = doc.data(); const html = `<div class="glass-card" style="margin-bottom:10px; border-left:4px solid var(--blue);"><small>${new Date(d.date).toLocaleString()}</small><br><b>${d.type}</b> from <b>${d.college}</b><br><p>${d.message || d.book}</p><div style="text-align:right;"><button class="btn-sm" style="background:red" onclick="deleteMsg('${doc.id}')">Delete</button></div></div>`;
-                if(d.type.includes("Nomination")) { n++; nomList.innerHTML += html; } else { m++; list.innerHTML += html; }
+        // --- REPAIR TOOL ---
+        async function fixMissingLanguages() {
+            const snap = await db.collection("library_settings").get();
+            let count = 0;
+            for (const doc of snap.docs) {
+                if (!doc.data().language) {
+                    await db.collection("library_settings").doc(doc.id).update({ language: "English" });
+                    count++;
+                }
+            }
+            alert("Repaired " + count + " books. All set to English.");
+            document.getElementById('fix-db-banner').style.display = 'none';
+        }
+
+        // --- USAGE & LOGS LOGIC ---
+        function loadLogs() {
+            // Raw Activity Feed
+            db.collection("activity_logs").orderBy("startTime", "desc").limit(50).onSnapshot(snap => {
+                const feed = document.getElementById('raw-logs');
+                feed.innerHTML = "";
+                snap.forEach(doc => {
+                    const l = doc.data();
+                    const duration = l.endTime ? Math.round((l.endTime - l.startTime) / 1000) : "...";
+                    feed.innerHTML += `
+                    <div class="list-item" style="font-size:11px;">
+                        <span><b>${l.type}</b>: ${l.activity}</span>
+                        <span style="color:var(--text-sub)">${duration}s</span>
+                    </div>`;
+                });
             });
-            document.getElementById('nom-badge').innerText = n; document.getElementById('msg-badge').innerText = m;
-        });
-    }
 
-    function loadAttendanceList(cid) { if(!cid) return; db.collection("users").where("collegeId", "==", cid).onSnapshot(snap => { const list = document.getElementById('attendance-user-list'); list.innerHTML = ""; snap.forEach(doc => { const u = doc.data(); list.innerHTML += `<div class="user-folder" onclick='openReport("${doc.id}","${u.fullName}","${u.role}")'>📂 <b>${u.fullName}</b></div>`; }); }); }
-    async function changeUserRole() { await db.collection("users").doc(activeUID).update({ role: document.getElementById('new-role-select').value }); alert("Role Updated!"); }
-    async function addNewBook() { const t = document.getElementById('new-title').value.trim(), c = document.getElementById('new-cat').value, a = document.getElementById('new-access').value.trim().split(',').map(s=>s.trim()); if(!t) return; await db.collection("library_settings").add({ title: t, category: c, allowedColleges: a, recent: true, trending: false }); alert("Added!"); }
-    async function updF(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
-    async function toggleAccess(id, coll, has) { const ref = db.collection("library_settings").doc(id); const d = await ref.get(); let allowed = d.data().allowedColleges || []; allowed = has ? allowed.filter(c => c !== coll) : [...allowed, coll]; await ref.update({ allowedColleges: allowed }); }
-    async function deleteMsg(id) { if(confirm("Delete message?")) await db.collection("admin_messages").doc(id).delete(); }
-    async function deletePDF(id) { if(confirm("Delete book?")) await db.collection("library_settings").doc(id).delete(); }
-    function toggleM(id) { document.querySelectorAll('.dropdown-menu').forEach(m => m.id !== id ? m.classList.remove('show') : null); document.getElementById(id).classList.toggle('show'); }
-    function fmt(s) { if(isNaN(s) || s <= 0) return "00:00:00"; const h = Math.floor(s/3600).toString().padStart(2,'0'), m = Math.floor((s%3600)/60).toString().padStart(2,'0'), sec = (s%60).toString().padStart(2,'0'); return `${h}:${m}:${sec}`; }
-    function closeModal() { document.getElementById('user-modal').classList.add('hidden'); if(logUnsub) logUnsub(); }
-    function switchTab(t) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === 't-'+t)); document.querySelectorAll('.glass-card').forEach(s => s.classList.toggle('hidden', s.id !== t+'-section')); }
-    async function sendAdminHelp() { const m = document.getElementById('help-msg').value; if(!m) return; await db.collection("admin_messages").add({ type: "Support", college: loggedID, message: m, date: Date.now(), user: loggedID }); alert("Sent!"); }
-</script>
+            // Total Usage Summary Calculation
+            db.collection("activity_logs").onSnapshot(snap => {
+                const summary = {};
+                snap.forEach(doc => {
+                    const l = doc.data();
+                    if (!l.userId || !l.endTime) return;
+                    
+                    if (!summary[l.userId]) summary[l.userId] = { usage: 0, read: 0 };
+                    const diff = (l.endTime - l.startTime) / 1000; // in seconds
+
+                    if (l.type === "Usage") summary[l.userId].usage += diff;
+                    if (l.type === "Full Read") summary[l.userId].read += diff;
+                });
+
+                const table = document.getElementById('usage-summary');
+                table.innerHTML = "";
+                for (const uid in summary) {
+                    table.innerHTML += `
+                    <tr>
+                        <td>${uid.substring(0,8)}...</td>
+                        <td><b>${formatTime(summary[uid].usage)}</b></td>
+                        <td>${formatTime(summary[uid].read)}</td>
+                    </tr>`;
+                }
+            });
+        }
+
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return `${h}h ${m}m ${s}s`;
+        }
+
+        // Initialize
+        loadBooks();
+        loadLogs();
+    </script>
 </body>
 </html>
