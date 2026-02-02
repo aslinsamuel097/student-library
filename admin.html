@@ -92,7 +92,7 @@
                             <div id="sum-usage">Usage: <b>0s</b></div>
                             <div id="sum-read">Read: <b>0s</b></div>
                         </div>
-                        <button class="btn-blue" style="margin-bottom:10px; background:var(--green); font-size:10px;" onclick="downloadStudentCSV()">📊 Download Student Logs</button>
+                        <button class="btn-blue" style="margin-bottom:10px; background:var(--green); font-size:10px;" onclick="downloadStudentCSV()">📊 Download Logs</button>
                         <div class="scroll-area" id="det-logs" style="font-size:10px;"></div>
                     </div>
                 </div>
@@ -103,7 +103,7 @@
                 </div>
 
                 <div class="card">
-                    <h2>📥 Global Inbox <span onclick="loadInbox()" style="cursor:pointer; color:var(--blue); font-size:10px;">[Refresh]</span></h2>
+                    <h2>📥 Inbox <span onclick="loadInbox()" style="cursor:pointer; color:var(--blue); font-size:10px;">[Refresh]</span></h2>
                     <div class="scroll-area" id="inbox-area"></div>
                 </div>
             </div>
@@ -116,93 +116,19 @@
 
         let loggedInRole = ""; let loggedInCollege = ""; let collegeList = []; let allUsers = []; let currentLogs = []; let currentStudentName = "";
 
-        async function checkAuth() {
-            const role = document.getElementById('admin-role-select').value, id = document.getElementById('admin-id').value, pass = document.getElementById('admin-pass').value;
-            if(role === 'super' && id === 'admin' && pass === 'theo777') { loggedInRole = "super"; startApp(); }
-            else if (role === 'college') {
-                const snap = await db.collection("users").where("studentId","==",id).where("password","==",pass).where("role","==","college_admin").get();
-                if(!snap.empty) { loggedInRole = "college"; loggedInCollege = snap.docs[0].data().collegeId; startApp(); }
-                else alert("Invalid Credentials");
-            } else alert("Login Failed");
-        }
-
-        function startApp() {
-            document.getElementById('auth-screen').classList.add('hidden');
-            loadColleges(); loadBooks(); loadInbox(); loadAttendance();
-        }
-
-        function loadColleges() {
-            db.collection("users").onSnapshot(snap => {
-                const colls = new Set();
-                snap.forEach(doc => { if(doc.data().collegeId) colls.add(doc.data().collegeId); });
-                collegeList = Array.from(colls);
-                const select = document.getElementById('m-coll-select'), multi = document.getElementById('b-colls-list');
-                select.innerHTML = `<option value="">Select College</option>`;
-                multi.innerHTML = "";
-                collegeList.forEach(c => {
-                    select.innerHTML += `<option value="${c}">${c}</option>`;
-                    multi.innerHTML += `<div class="multi-option"><input type="checkbox" name="target-colls" value="${c}"><span>${c}</span></div>`;
-                });
-            });
-        }
-
-        async function addBook() {
-            const title = document.getElementById('b-title').value, id = document.getElementById('b-id').value;
-            const cat = document.getElementById('b-cat').value, lang = document.getElementById('b-lang').value;
-            const selectedColls = Array.from(document.querySelectorAll('input[name="target-colls"]:checked')).map(cb => cb.value);
-            if(!title || !id || selectedColls.length === 0) return alert("Fill all info!");
-            await db.collection("library_settings").doc(id).set({ title, category: cat, language: lang, allowedColleges: selectedColls, recent: true, promoted: false });
-            alert("Book Registered!");
-        }
-
-        function loadBooks() {
-            db.collection("library_settings").onSnapshot(snap => {
-                const list = document.getElementById('book-list'); list.innerHTML = "";
-                snap.forEach(doc => {
-                    const b = doc.data(); const id = doc.id;
-                    list.innerHTML += `
-                    <div class="list-item">
-                        <div style="display:flex; justify-content:space-between;"><b>${b.title}</b><button class="btn-red" onclick="deleteBook('${id}')">Del</button></div>
-                        <div class="control-row">
-                            <select class="tiny-select" onchange="updateBook('${id}','language',this.value)">
-                                <option value="English" ${b.language=='English'?'selected':''}>English</option>
-                                <option value="Tamil" ${b.language=='Tamil'?'selected':''}>Tamil</option>
-                                <option value="Malayalam" ${b.language=='Malayalam'?'selected':''}>Malayalam</option>
-                            </select>
-                            <select class="tiny-select" onchange="updateBook('${id}','category',this.value)">
-                                <option value="Theology" ${b.category=='Theology'?'selected':''}>Theology</option>
-                                <option value="Acts" ${b.category=='Acts'?'selected':''}>Acts</option>
-                                <option value="Ethics" ${b.category=='Ethics'?'selected':''}>Ethics</option>
-                                <option value="Mission" ${b.category=='Mission'?'selected':''}>Mission</option>
-                                <option value="Church History" ${b.category=='Church History'?'selected':''}>History</option>
-                                <option value="Bible Intro" ${b.category=='Bible Intro'?'selected':''}>Intro</option>
-                            </select>
-                            <button class="btn-action ${b.promoted?'active':''}" onclick="updateBook('${id}','promoted',${!b.promoted})">Promo</button>
-                            <input type="text" class="tiny-select" style="width:70px" value="${b.allowedColleges.join(',')}" onchange="updateBook('${id}','allowedColleges',this.value.split(','))">
-                        </div>
-                    </div>`;
-                });
-            });
-        }
-
+        async function checkAuth() { const role = document.getElementById('admin-role-select').value, id = document.getElementById('admin-id').value, pass = document.getElementById('admin-pass').value; if(role === 'super' && id === 'admin' && pass === 'theo777') { loggedInRole = "super"; startApp(); } else if (role === 'college') { const snap = await db.collection("users").where("studentId","==",id).where("password","==",pass).where("role","==","college_admin").get(); if(!snap.empty) { loggedInRole = "college"; loggedInCollege = snap.docs[0].data().collegeId; startApp(); } else alert("Invalid Credentials"); } else alert("Login Failed"); }
+        function startApp() { document.getElementById('auth-screen').classList.add('hidden'); loadColleges(); loadBooks(); loadInbox(); loadAttendance(); }
+        function loadColleges() { db.collection("users").onSnapshot(snap => { const colls = new Set(); snap.forEach(doc => { if(doc.data().collegeId) colls.add(doc.data().collegeId); }); collegeList = Array.from(colls); const select = document.getElementById('m-coll-select'), multi = document.getElementById('b-colls-list'); select.innerHTML = `<option value="">Select College</option>`; multi.innerHTML = ""; collegeList.forEach(c => { select.innerHTML += `<option value="${c}">${c}</option>`; multi.innerHTML += `<div class="multi-option"><input type="checkbox" name="target-colls" value="${c}"><span>${c}</span></div>`; }); }); }
+        async function addBook() { const title = document.getElementById('b-title').value, id = document.getElementById('b-id').value, cat = document.getElementById('b-cat').value, lang = document.getElementById('b-lang').value; const selectedColls = Array.from(document.querySelectorAll('input[name="target-colls"]:checked')).map(cb => cb.value); if(!title || !id || selectedColls.length === 0) return alert("Fill all info!"); await db.collection("library_settings").doc(id).set({ title, category: cat, language: lang, allowedColleges: selectedColls, recent: true, promoted: false }); alert("Book Registered!"); }
+        function loadBooks() { db.collection("library_settings").onSnapshot(snap => { const list = document.getElementById('book-list'); list.innerHTML = ""; snap.forEach(doc => { const b = doc.data(); const id = doc.id; list.innerHTML += `<div class="list-item" style="cursor:default"><div style="display:flex; justify-content:space-between;"><b>${b.title}</b> <button class="btn-red" onclick="deleteBook('${id}')">Del</button></div><div class="control-row"><select class="tiny-select" onchange="updateBook('${id}','language',this.value)"><option value="English" ${b.language=='English'?'selected':''}>English</option><option value="Tamil" ${b.language=='Tamil'?'selected':''}>Tamil</option><option value="Malayalam" ${b.language=='Malayalam'?'selected':''}>Malayalam</option></select><select class="tiny-select" onchange="updateBook('${id}','category',this.value)"><option value="Theology" ${b.category=='Theology'?'selected':''}>Theology</option><option value="Acts" ${b.category=='Acts'?'selected':''}>Acts</option><option value="Ethics" ${b.category=='Ethics'?'selected':''}>Ethics</option><option value="Mission" ${b.category=='Mission'?'selected':''}>Mission</option><option value="Church History" ${b.category=='Church History'?'selected':''}>History</option><option value="Bible Intro" ${b.category=='Bible Intro'?'selected':''}>Intro</option></select><button class="btn-action ${b.promoted?'active':''}" onclick="updateBook('${id}','promoted',${!b.promoted})">Promo</button><input type="text" class="tiny-select" style="width:70px" value="${b.allowedColleges.join(',')}" onchange="updateBook('${id}','allowedColleges',this.value.split(','))"></div></div>`; }); }); }
         async function updateBook(id, f, v) { await db.collection("library_settings").doc(id).update({ [f]: v }); }
-        async function deleteBook(id) { if(confirm("Delete book?")) await db.collection("library_settings").doc(id).delete(); }
-
-        async function addMember() {
-            const n = document.getElementById('m-name').value, c = document.getElementById('m-coll-new').value.toUpperCase() || document.getElementById('m-coll-select').value, i = document.getElementById('m-id').value, p = document.getElementById('m-pass').value, r = document.getElementById('m-role').value;
-            if(!n || !c || !i) return alert("Fill member info!");
-            await db.collection("users").add({ fullName: n, collegeId: c, studentId: i, password: p, role: r, lastActive: Date.now() });
-            alert("Registered!");
-        }
+        async function deleteBook(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
+        async function addMember() { const n = document.getElementById('m-name').value, c = document.getElementById('m-coll-new').value.toUpperCase() || document.getElementById('m-coll-select').value, i = document.getElementById('m-id').value, p = document.getElementById('m-pass').value, r = document.getElementById('m-role').value; if(!n || !c || !i) return alert("Fill info!"); await db.collection("users").add({ fullName: n, collegeId: c, studentId: i, password: p, role: r, lastActive: Date.now() }); alert("Registered!"); }
 
         function loadAttendance() {
             db.collection("users").onSnapshot(snap => {
                 allUsers = []; const colls = new Set();
-                snap.forEach(doc => {
-                    const u = {id: doc.id, ...doc.data()};
-                    if(loggedInRole === 'college' && u.collegeId !== loggedInCollege) return;
-                    allUsers.push(u); colls.add(u.collegeId);
-                });
+                snap.forEach(doc => { const u = {id: doc.id, ...doc.data()}; if(loggedInRole === 'college' && u.collegeId !== loggedInCollege) return; allUsers.push(u); colls.add(u.collegeId); });
                 const area = document.getElementById('college-list-area'); area.innerHTML = "";
                 if(loggedInRole === 'super') Array.from(colls).forEach(c => area.innerHTML += `<div class="list-item" onclick="showStudentsNav('${c}')">📁 College: ${c}</div>`);
                 else showStudentsNav(loggedInCollege);
@@ -226,9 +152,7 @@
                 snap.forEach(doc => {
                     const l = doc.data(); const d = l.endTime ? Math.round((l.endTime - l.startTime)/1000) : 0;
                     currentLogs.push({ ...l, duration: d });
-                    if(l.type === "Usage") usage += d;
-                    if(l.type === "Online Read") readPrev += d;
-                    if(l.type === "Full Read") readFull += d;
+                    if(l.type === "Usage") usage += d; if(l.type === "Online Read") readPrev += d; if(l.type === "Full Read") readFull += d;
                     logArea.innerHTML += `<div style="padding:4px; border-bottom:1px solid #334155; display:flex; justify-content:space-between;"><span>${l.type}: ${l.activity}</span><span>${formatTime(d)}</span></div>`;
                 });
                 document.getElementById('sum-usage').innerHTML = `Usage: <b>${formatTime(usage)}</b>`;
@@ -236,15 +160,7 @@
             });
         }
 
-        async function downloadStudentCSV() {
-            if(currentLogs.length === 0) return alert("No logs to download");
-            let csv = "Type,Activity,Start Time,End Time,Duration(s)\n";
-            currentLogs.forEach(l => {
-                csv += `${l.type},${l.activity},${new Date(l.startTime).toLocaleString()},${l.endTime ? new Date(l.endTime).toLocaleString() : 'Active'},${l.duration}\n`;
-            });
-            const link = document.createElement("a"); link.href = "data:text/csv;charset=utf-8," + encodeURI(csv); link.download = `${currentStudentName}_Logs.csv`; link.click();
-        }
-
+        async function downloadStudentCSV() { if(currentLogs.length === 0) return alert("No logs to download"); let csv = "Type,Activity,Start Time,End Time,Duration(s)\n"; currentLogs.forEach(l => { csv += `${l.type},${l.activity},${new Date(l.startTime).toLocaleString()},${l.endTime ? new Date(l.endTime).toLocaleString() : 'Active'},${l.duration}\n`; }); const link = document.createElement("a"); link.href = "data:text/csv;charset=utf-8," + encodeURI(csv); link.download = `${currentStudentName}_Logs.csv`; link.click(); }
         function formatTime(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60; return `${h}h ${m}m ${sec}s`; }
         function showCollegesNav() { document.getElementById('view-colleges').classList.remove('hidden'); document.getElementById('view-students').classList.add('hidden'); }
         function showStudentsNav() { document.getElementById('view-students').classList.remove('hidden'); document.getElementById('view-details').classList.add('hidden'); }
@@ -253,4 +169,3 @@
     </script>
 </body>
 </html>
-now
