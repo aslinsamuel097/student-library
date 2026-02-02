@@ -143,12 +143,10 @@
                 currentUser = { uid: snap.docs[0].id, ...snap.docs[0].data() };
                 document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden');
                 
-                // LOGIN RECORD
                 const doc = await db.collection("activity_logs").add({
                     userId: currentUser.uid, type: "Usage", activity: "Login Session", startTime: Date.now(), endTime: null
                 });
                 currentLogId = doc.id;
-
                 initSystem();
             } else alert("Login Failed");
         }
