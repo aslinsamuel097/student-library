@@ -123,13 +123,12 @@
         let currentUser = null; let collegeBooks = []; let sessionSeconds = 0; let readSeconds = 0;
         let isBrowserActive = true; let currentLogId = null; let readerLogId = null;
 
-        // Visibility tracking for pause logic
+        // FIXED TIMER PAUSE LOGIC
         document.addEventListener("visibilitychange", () => {
             isBrowserActive = !document.hidden;
             const sBox = document.getElementById('session-box');
-            const sText = document.getElementById('status-text');
-            if (isBrowserActive) { sBox.classList.remove('paused'); sText.innerText = "Active"; }
-            else { sBox.classList.add('paused'); sText.innerText = "Paused"; }
+            if (isBrowserActive) { sBox.classList.remove('paused'); document.getElementById('status-text').innerText = "Active"; }
+            else { sBox.classList.add('paused'); document.getElementById('status-text').innerText = "Paused"; }
         });
 
         async function handleLogin() {
@@ -173,7 +172,7 @@
 
         async function openPdfPreview(id, t) { 
             const doc = await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Online Read", activity: t, startTime: Date.now(), endTime: null });
-            readerLogId = doc.id;
+            readerLogId = doc.id; readSeconds = 0;
             document.getElementById('reader-title').innerText = t; 
             document.getElementById('pdf-frame').src = `/${id}_read_online.pdf`; 
             document.getElementById('reader-overlay').classList.remove('hidden'); 
@@ -181,12 +180,11 @@
         
         async function openFullPdf(id, t) { 
             const doc = await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Full Read", activity: t, startTime: Date.now(), endTime: null });
-            readerLogId = doc.id;
+            readerLogId = doc.id; readSeconds = 0;
             document.getElementById('reader-title').innerText = t; 
             document.getElementById('pdf-frame').src = `/${id}.pdf`; 
-            // Trigger overlay immediately
             document.getElementById('reader-overlay').classList.remove('hidden');
-            document.getElementById('borrow-view').classList.add('hidden'); // Close borrow view if open
+            document.getElementById('borrow-view').classList.add('hidden');
         }
 
         async function closeReader() { if (readerLogId) await db.collection("activity_logs").doc(readerLogId).update({ endTime: Date.now() }); document.getElementById('pdf-frame').src = ''; document.getElementById('reader-overlay').classList.add('hidden'); }
