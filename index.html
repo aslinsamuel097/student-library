@@ -122,20 +122,14 @@
         
         let currentUser = null; let collegeBooks = []; let sessionSeconds = 0; let readSeconds = 0;
         let isBrowserActive = true; let currentLogId = null; let readerLogId = null;
-        let selectedLanguage = "English";
 
-        // TIMER PAUSE LOGIC
+        // Visibility tracking for pause logic
         document.addEventListener("visibilitychange", () => {
             isBrowserActive = !document.hidden;
             const sBox = document.getElementById('session-box');
             const sText = document.getElementById('status-text');
-            if (isBrowserActive) {
-                sBox.classList.remove('paused');
-                sText.innerText = "Active";
-            } else {
-                sBox.classList.add('paused');
-                sText.innerText = "Paused";
-            }
+            if (isBrowserActive) { sBox.classList.remove('paused'); sText.innerText = "Active"; }
+            else { sBox.classList.add('paused'); sText.innerText = "Paused"; }
         });
 
         async function handleLogin() {
@@ -149,20 +143,14 @@
             } else alert("Login Failed");
         }
 
-        async function handleLogout() { 
-            if (currentLogId) await db.collection("activity_logs").doc(currentLogId).update({ endTime: Date.now() });
-            location.reload(); 
-        }
+        async function handleLogout() { if (currentLogId) await db.collection("activity_logs").doc(currentLogId).update({ endTime: Date.now() }); location.reload(); }
 
         function initSystem() {
             setInterval(() => { 
                 if(isBrowserActive) { 
                     sessionSeconds++; 
                     document.getElementById('session-clock').innerText = new Date(sessionSeconds * 1000).toISOString().substr(11, 8);
-                    if (!document.getElementById('reader-overlay').classList.contains('hidden')) {
-                        readSeconds++;
-                        document.getElementById('read-clock').innerText = new Date(readSeconds * 1000).toISOString().substr(14, 5);
-                    }
+                    if (!document.getElementById('reader-overlay').classList.contains('hidden')) { readSeconds++; document.getElementById('read-clock').innerText = new Date(readSeconds * 1000).toISOString().substr(14, 5); }
                 } 
             }, 1000);
             setInterval(() => { document.getElementById('real-time-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
@@ -170,14 +158,10 @@
         }
 
         function loadLibrary(lang) {
-            selectedLanguage = lang;
             db.collection("library_settings").where("allowedColleges","array-contains",currentUser.collegeId).where("language","==",lang).onSnapshot(snap => {
                 collegeBooks = []; const rec = document.getElementById('recent-list'), trend = document.getElementById('trending-list');
                 rec.innerHTML = trend.innerHTML = "";
-                snap.forEach(doc => { 
-                    const b = {id: doc.id, ...doc.data()}; collegeBooks.push(b);
-                    rec.innerHTML += renderItem(b); if(b.recent) trend.innerHTML += renderItem(b);
-                });
+                snap.forEach(doc => { const b = {id: doc.id, ...doc.data()}; collegeBooks.push(b); rec.innerHTML += renderItem(b); if(b.recent) trend.innerHTML += renderItem(b); });
                 document.getElementById('top-total').innerText = collegeBooks.length;
             });
             db.collection("borrows").where("userId","==",currentUser.uid).onSnapshot(snap => {
@@ -191,7 +175,6 @@
             const doc = await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Online Read", activity: t, startTime: Date.now(), endTime: null });
             readerLogId = doc.id;
             document.getElementById('reader-title').innerText = t; 
-            // VERCEL PATH FIX
             document.getElementById('pdf-frame').src = `/${id}_read_online.pdf`; 
             document.getElementById('reader-overlay').classList.remove('hidden'); 
         }
@@ -200,16 +183,13 @@
             const doc = await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Full Read", activity: t, startTime: Date.now(), endTime: null });
             readerLogId = doc.id;
             document.getElementById('reader-title').innerText = t; 
-            // VERCEL PATH FIX
             document.getElementById('pdf-frame').src = `/${id}.pdf`; 
-            document.getElementById('reader-overlay').classList.remove('hidden'); 
+            // Trigger overlay immediately
+            document.getElementById('reader-overlay').classList.remove('hidden');
+            document.getElementById('borrow-view').classList.add('hidden'); // Close borrow view if open
         }
 
-        async function closeReader() { 
-            if (readerLogId) await db.collection("activity_logs").doc(readerLogId).update({ endTime: Date.now() });
-            document.getElementById('pdf-frame').src = ''; document.getElementById('reader-overlay').classList.add('hidden'); 
-        }
-
+        async function closeReader() { if (readerLogId) await db.collection("activity_logs").doc(readerLogId).update({ endTime: Date.now() }); document.getElementById('pdf-frame').src = ''; document.getElementById('reader-overlay').classList.add('hidden'); }
         function setLanguage(lang, btn) { document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); loadLibrary(lang); }
         function renderItem(b) { return `<div class="book-item"><b>${b.title}</b><br><button class="btn-preview" onclick="openPdfPreview('${b.id}','${b.title}')">Preview</button><button class="btn-preview" style="background:var(--orange)" onclick="borrowBook('${b.id}','${b.title}')">Borrow</button></div>`; }
         async function borrowBook(id, t) { await db.collection("borrows").add({ userId: currentUser.uid, bookId: id, title: t, date: Date.now() }); alert("Issued!"); }
