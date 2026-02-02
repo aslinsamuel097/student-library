@@ -20,7 +20,7 @@
         .btn-red { background: var(--red); color: white; width: auto; padding: 4px 8px; font-size: 10px; border-radius: 5px; }
         .btn-action { background: #334155; color: white; padding: 4px 8px; width: auto; font-size: 10px; border-radius: 5px; border: 1px solid var(--border); margin-right: 4px; }
         .btn-action.active { background: var(--green); border-color: var(--green); }
-        .list-item { background: #161e2e; padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); font-size: 12px; }
+        .list-item { background: #161e2e; padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; }
         .scroll-area { max-height: 450px; overflow-y: auto; padding-right: 5px; }
         .hidden { display: none !important; }
         .breadcrumb { font-size: 11px; color: var(--blue); margin-bottom: 10px; cursor: pointer; }
@@ -54,16 +54,16 @@
         <div class="grid">
             <div>
                 <div class="card" id="inventory-card">
-                    <h2>📚 Add Global Book</h2>
+                    <h2>📚 Inventory Management</h2>
                     <input type="text" id="b-title" placeholder="Book Title">
                     <input type="text" id="b-id" placeholder="Book ID (filename)">
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                        <select id="b-cat"><option value="Theology">Theology</option><option value="Acts">Acts</option><option value="Ethics">Ethics</option><option value="Church History">History</option><option value="Mission">Mission</option><option value="Bible Intro">Bible Intro</option><option value="Other Books">Other</option></select>
-                        <select id="b-lang"><option value="English">English</option><option value="Tamil">Tamil</option><option value="Malayalam">Malayalam</option></select>
+                        <select id="b-cat"><option value="Theology">Theology</option><option value="Acts">Acts of Apostles</option><option value="Ethics">Ethics</option><option value="Church History">History</option><option value="Mission">Mission</option><option value="Bible Intro">Bible Intro</option><option value="Other Books">Other</option></select>
+                        <select id="b-lang"><option value="English">English</option><option value="Tamil">Tamil</option><option value="Malayalam">Malayalam</option><option value="Hindi">Hindi</option></select>
                     </div>
                     <label style="font-size: 10px; color: var(--blue);">Target Colleges:</label>
                     <div class="multi-select-box" id="b-colls-list"></div>
-                    <button class="btn-blue" onclick="addBook()">+ Register Book</button>
+                    <button class="btn-blue" onclick="addBook()">+ Add Book</button>
                 </div>
 
                 <div class="card" id="member-card">
@@ -96,14 +96,12 @@
                         <div class="scroll-area" id="det-logs" style="font-size:10px;"></div>
                     </div>
                 </div>
-
                 <div class="card">
-                    <h2>📖 Inventory (Live Options)</h2>
+                    <h2>📖 Inventory Controls</h2>
                     <div class="scroll-area" id="book-list"></div>
                 </div>
-
                 <div class="card">
-                    <h2>📥 Inbox <span onclick="loadInbox()" style="cursor:pointer; color:var(--blue); font-size:10px;">[Refresh]</span></h2>
+                    <h2>📥 Global Inbox</h2>
                     <div class="scroll-area" id="inbox-area"></div>
                 </div>
             </div>
@@ -146,7 +144,6 @@
             document.getElementById('view-students').classList.add('hidden'); document.getElementById('view-details').classList.remove('hidden');
             document.getElementById('det-name').innerText = u.fullName;
             const logArea = document.getElementById('det-logs'); logArea.innerHTML = "Loading logs...";
-            
             db.collection("activity_logs").where("userId","==",uid).orderBy("startTime","desc").onSnapshot(snap => {
                 logArea.innerHTML = ""; currentLogs = []; let usage = 0; let readPrev = 0; let readFull = 0;
                 snap.forEach(doc => {
