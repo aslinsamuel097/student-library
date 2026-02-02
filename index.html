@@ -125,13 +125,15 @@
 
         async function handleLogin() {
             const r = document.getElementById('login-role').value, cid = document.getElementById('login-coll-id').value.trim(), uid = document.getElementById('login-user-id').value.trim(), pass = document.getElementById('login-pass').value.trim();
-            // ADDED ROLE CHECK
             const snap = await db.collection("users").where("collegeId","==",cid).where("studentId","==",uid).where("password","==",pass).where("role","==",r).get();
             if(!snap.empty) {
                 currentUser = { uid: snap.docs[0].id, ...snap.docs[0].data() };
                 document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden');
+                
+                // Track Login
                 const doc = await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Usage", activity: "Login Session", startTime: Date.now(), endTime: null });
-                currentLogId = doc.id; initSystem();
+                currentLogId = doc.id;
+                initSystem();
             } else alert("Login Failed: Verify credentials and role.");
         }
 
@@ -141,20 +143,25 @@
         }
 
         async function openPdfPreview(id, t) { 
-            const doc = await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Online Read", activity: t, startTime: Date.now(), endTime: null });
+            const doc = await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Preview Read", activity: t, startTime: Date.now(), endTime: null });
             readerLogId = doc.id;
-            document.getElementById('reader-title').innerText = t; document.getElementById('pdf-frame').src = `/${id}_read_online.pdf`; document.getElementById('reader-overlay').classList.remove('hidden'); 
+            document.getElementById('reader-title').innerText = t; 
+            document.getElementById('pdf-frame').src = `/${id}_read_online.pdf`; 
+            document.getElementById('reader-overlay').classList.remove('hidden'); 
         }
         
         async function openFullPdf(id, t) { 
             const doc = await db.collection("activity_logs").add({ userId: currentUser.uid, type: "Full Read", activity: t, startTime: Date.now(), endTime: null });
             readerLogId = doc.id;
-            document.getElementById('reader-title').innerText = t; document.getElementById('pdf-frame').src = `/${id}.pdf`; document.getElementById('reader-overlay').classList.remove('hidden'); 
+            document.getElementById('reader-title').innerText = t; 
+            document.getElementById('pdf-frame').src = `/${id}.pdf`; 
+            document.getElementById('reader-overlay').classList.remove('hidden'); 
         }
 
         async function closeReader() { 
             if (readerLogId) await db.collection("activity_logs").doc(readerLogId).update({ endTime: Date.now() });
-            document.getElementById('pdf-frame').src = ''; document.getElementById('reader-overlay').classList.add('hidden'); 
+            document.getElementById('pdf-frame').src = ''; 
+            document.getElementById('reader-overlay').classList.add('hidden'); 
         }
 
         function setLanguage(lang, btn) { document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); loadLibrary(lang); }
