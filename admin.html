@@ -15,78 +15,85 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid var(--border); }
         h2 { color: var(--blue); margin-top: 0; font-size: 18px; }
-        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; box-sizing: border-box; }
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; box-sizing: border-box; font-family: inherit; }
         button { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; }
         .btn-blue { background: var(--blue); color: white; }
         .btn-orange { background: var(--orange); color: white; }
-        .btn-red { background: var(--red); color: white; padding: 5px 10px; width: auto; font-size: 11px; }
+        .btn-red { background: var(--red); color: white; padding: 5px 10px; width: auto; font-size: 10px; border-radius: 5px; }
+        .btn-action { background: #334155; color: white; padding: 5px 10px; width: auto; font-size: 10px; border-radius: 5px; border: 1px solid var(--border); margin-left: 5px; }
+        .btn-action.active { background: var(--green); border-color: var(--green); }
         .list-item { background: var(--bg); padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border: 1px solid var(--border); }
-        .tag-select { width: auto; margin-bottom: 0; padding: 4px; font-size: 11px; margin-right: 10px; }
+        .tag-select { width: auto; margin-bottom: 0; padding: 4px; font-size: 11px; margin-right: 5px; background: #1e293b; }
         .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .log-table th, .log-table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
-        .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }
-        .scroll-area { max-height: 400px; overflow-y: auto; }
-        #fix-db-banner { background: var(--orange); padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .scroll-area { max-height: 450px; overflow-y: auto; padding-right: 5px; }
+        #fix-db-banner { background: var(--orange); padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>TheoLib Super Admin</h1>
-        <button onclick="location.reload()" style="width:auto; padding:8px 15px;">🔄 Refresh Data</button>
+        <div style="display:flex; gap:10px;">
+            <button onclick="location.reload()" style="width:auto; padding:8px 15px; background:var(--card); color:white; border:1px solid var(--border);">🔄 Refresh</button>
+            <button onclick="logoutAdmin()" style="width:auto; padding:8px 15px; background:var(--red); color:white;">Logout</button>
+        </div>
     </div>
 
     <div id="fix-db-banner">
-        <span>⚠️ <b>Database Sync Required:</b> Tag all untagged books as "English" to ensure visibility.</span>
-        <button onclick="fixMissingLanguages()" style="width:auto; background:white; color:black;">Fix Now</button>
+        <span>⚠️ <b>Action Required:</b> Some books may be missing Language Tags. Fix this to make them visible.</span>
+        <button onclick="fixMissingLanguages()" style="width:auto; background:white; color:black; padding:5px 15px;">Fix All to English</button>
     </div>
 
     <div class="grid">
         <div class="card">
-            <h2>📚 Add New Book</h2>
-            <input type="text" id="b-title" placeholder="Book Title">
-            <input type="text" id="b-id" placeholder="Book ID (Must match PDF filename)">
-            <select id="b-cat">
-                <option value="Theology">Theology</option>
-                <option value="Church History">Church History</option>
-                <option value="Mission">Mission</option>
-                <option value="Bible Intro">Bible Intro</option>
-                <option value="Acts">Acts of Apostles</option>
-                <option value="Ethics">Christian Ethics</option>
-                <option value="Other Books">Other Books</option>
-            </select>
-            <select id="b-lang">
-                <option value="English">English</option>
-                <option value="Tamil">Tamil</option>
-                <option value="Malayalam">Malayalam</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Other">Other</option>
-            </select>
-            <input type="text" id="b-colls" placeholder="Allowed Colleges (e.g. IMC26, ASLIN26)">
-            <button class="btn-blue" onclick="addBook()">Upload to Library</button>
+            <h2>📚 Library Management</h2>
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <input type="text" id="b-title" placeholder="Book Title">
+                <input type="text" id="b-id" placeholder="Book ID (filename)">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <select id="b-cat">
+                        <option value="Theology">Theology</option>
+                        <option value="Church History">Church History</option>
+                        <option value="Mission">Mission</option>
+                        <option value="Bible Intro">Bible Intro</option>
+                        <option value="Acts">Acts of Apostles</option>
+                        <option value="Ethics">Christian Ethics</option>
+                        <option value="Other Books">Other Books</option>
+                    </select>
+                    <select id="b-lang">
+                        <option value="English">English</option>
+                        <option value="Tamil">Tamil</option>
+                        <option value="Malayalam">Malayalam</option>
+                        <option value="Hindi">Hindi</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <input type="text" id="b-colls" placeholder="Allowed Colleges (e.g. IMC26, ASLIN26)">
+                <button class="btn-blue" onclick="addBook()">+ Add Book to Library</button>
+            </div>
 
-            <h2 style="margin-top:20px;">📖 Existing Inventory</h2>
-            <div class="scroll-area" id="book-list">Loading...</div>
+            <h2>📖 Book Inventory</h2>
+            <div class="scroll-area" id="book-list">Loading inventory...</div>
         </div>
 
         <div class="card">
-            <h2>⏱️ Student Activity Logs (Total Usage)</h2>
-            <div class="scroll-area">
+            <h2>⏱️ Attendance Summary</h2>
+            <div class="scroll-area" style="max-height: 300px; margin-bottom:20px;">
                 <table class="log-table">
                     <thead>
                         <tr>
-                            <th>Student</th>
-                            <th>Total App Usage</th>
-                            <th>Total Full Reading</th>
+                            <th>Student ID</th>
+                            <th>Total Usage</th>
+                            <th>Reading Time</th>
                         </tr>
                     </thead>
-                    <tbody id="usage-summary">
-                        </tbody>
+                    <tbody id="usage-summary"></tbody>
                 </table>
             </div>
 
-            <h2 style="margin-top:20px;">📜 Raw Activity Feed</h2>
-            <div class="scroll-area" id="raw-logs">Loading logs...</div>
+            <h2>📜 Live Activity Feed</h2>
+            <div class="scroll-area" id="raw-logs" style="max-height: 350px;"></div>
         </div>
     </div>
 
@@ -94,50 +101,51 @@
         const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
 
-        // --- BOOK LOGIC ---
+        // --- BOOK OPERATIONS ---
         async function addBook() {
-            const title = document.getElementById('b-title').value;
-            const id = document.getElementById('b-id').value;
-            const cat = document.getElementById('b-cat').value;
-            const lang = document.getElementById('b-lang').value;
-            const colls = document.getElementById('b-colls').value.split(',').map(s => s.trim());
+            const title = document.getElementById('b-title').value, id = document.getElementById('b-id').value;
+            const cat = document.getElementById('b-cat').value, lang = document.getElementById('b-lang').value;
+            const colls = document.getElementById('b-colls').value.split(',').map(s => s.trim().toUpperCase());
 
-            if(!title || !id) return alert("Fill fields!");
+            if(!title || !id) return alert("Title and ID are required.");
             await db.collection("library_settings").doc(id).set({
-                title, category: cat, language: lang, allowedColleges: colls, recent: true
+                title, category: cat, language: lang, allowedColleges: colls, recent: true, promoted: false
             });
-            alert("Book added!"); location.reload();
+            alert("Book Saved!"); location.reload();
         }
 
         function loadBooks() {
             db.collection("library_settings").onSnapshot(snap => {
-                const list = document.getElementById('book-list');
-                list.innerHTML = "";
+                const list = document.getElementById('book-list'); list.innerHTML = "";
                 snap.forEach(doc => {
-                    const b = doc.data();
-                    const currentLang = b.language || "English";
+                    const b = doc.data(), id = doc.id;
+                    const curLang = b.language || "English";
                     list.innerHTML += `
                     <div class="list-item">
-                        <span>${b.title}</span>
-                        <div>
-                            <select class="tag-select" onchange="updateLang('${doc.id}', this.value)">
-                                <option value="English" ${currentLang==='English'?'selected':''}>EN</option>
-                                <option value="Tamil" ${currentLang==='Tamil'?'selected':''}>TM</option>
-                                <option value="Malayalam" ${currentLang==='Malayalam'?'selected':''}>ML</option>
-                                <option value="Hindi" ${currentLang==='Hindi'?'selected':''}>HN</option>
-                                <option value="Other" ${currentLang==='Other'?'selected':''}>OT</option>
+                        <div style="flex:1">
+                            <b>${b.title}</b><br>
+                            <small style="color:var(--blue)">${b.allowedColleges.join(', ')}</small>
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            <select class="tag-select" onchange="updateField('${id}', 'language', this.value)">
+                                <option value="English" ${curLang==='English'?'selected':''}>EN</option>
+                                <option value="Tamil" ${curLang==='Tamil'?'selected':''}>TM</option>
+                                <option value="Malayalam" ${curLang==='Malayalam'?'selected':''}>ML</option>
+                                <option value="Hindi" ${curLang==='Hindi'?'selected':''}>HN</option>
+                                <option value="Other" ${curLang==='Other'?'selected':''}>OT</option>
                             </select>
-                            <button class="btn-red" onclick="deleteBook('${doc.id}')">Del</button>
+                            <button class="btn-action ${b.recent?'active':''}" onclick="updateField('${id}', 'recent', ${!b.recent})">Recent</button>
+                            <button class="btn-red" onclick="deleteBook('${id}')">Del</button>
                         </div>
                     </div>`;
                 });
             });
         }
 
-        async function updateLang(id, lang) { await db.collection("library_settings").doc(id).update({ language: lang }); }
-        async function deleteBook(id) { if(confirm("Delete?")) await db.collection("library_settings").doc(id).delete(); }
+        async function updateField(id, field, val) { await db.collection("library_settings").doc(id).update({ [field]: val }); }
+        async function deleteBook(id) { if(confirm("Delete this book forever?")) await db.collection("library_settings").doc(id).delete(); }
 
-        // --- REPAIR TOOL ---
+        // --- DATABASE REPAIR ---
         async function fixMissingLanguages() {
             const snap = await db.collection("library_settings").get();
             let count = 0;
@@ -147,62 +155,55 @@
                     count++;
                 }
             }
-            alert("Repaired " + count + " books. All set to English.");
+            alert(`Success! Updated ${count} books to English.`);
             document.getElementById('fix-db-banner').style.display = 'none';
         }
 
-        // --- USAGE & LOGS LOGIC ---
+        // --- ATTENDANCE LOGIC ---
         function loadLogs() {
-            // Raw Activity Feed
-            db.collection("activity_logs").orderBy("startTime", "desc").limit(50).onSnapshot(snap => {
-                const feed = document.getElementById('raw-logs');
-                feed.innerHTML = "";
+            // Live Feed
+            db.collection("activity_logs").orderBy("startTime", "desc").limit(40).onSnapshot(snap => {
+                const feed = document.getElementById('raw-logs'); feed.innerHTML = "";
                 snap.forEach(doc => {
                     const l = doc.data();
-                    const duration = l.endTime ? Math.round((l.endTime - l.startTime) / 1000) : "...";
-                    feed.innerHTML += `
-                    <div class="list-item" style="font-size:11px;">
-                        <span><b>${l.type}</b>: ${l.activity}</span>
-                        <span style="color:var(--text-sub)">${duration}s</span>
+                    const dur = l.endTime ? Math.round((l.endTime - l.startTime) / 1000) + "s" : "Live";
+                    feed.innerHTML += `<div class="list-item" style="padding:8px; font-size:11px;">
+                        <span>[${l.type}] ${l.activity}</span>
+                        <span style="color:var(--green)">${dur}</span>
                     </div>`;
                 });
             });
 
-            // Total Usage Summary Calculation
+            // Usage Aggregation
             db.collection("activity_logs").onSnapshot(snap => {
-                const summary = {};
+                const users = {};
                 snap.forEach(doc => {
                     const l = doc.data();
                     if (!l.userId || !l.endTime) return;
-                    
-                    if (!summary[l.userId]) summary[l.userId] = { usage: 0, read: 0 };
-                    const diff = (l.endTime - l.startTime) / 1000; // in seconds
-
-                    if (l.type === "Usage") summary[l.userId].usage += diff;
-                    if (l.type === "Full Read") summary[l.userId].read += diff;
+                    if (!users[l.userId]) users[l.userId] = { usage: 0, read: 0 };
+                    const sec = (l.endTime - l.startTime) / 1000;
+                    if (l.type === "Usage") users[l.userId].usage += sec;
+                    else if (l.type === "Full Read") users[l.userId].read += sec;
                 });
 
-                const table = document.getElementById('usage-summary');
-                table.innerHTML = "";
-                for (const uid in summary) {
-                    table.innerHTML += `
-                    <tr>
-                        <td>${uid.substring(0,8)}...</td>
-                        <td><b>${formatTime(summary[uid].usage)}</b></td>
-                        <td>${formatTime(summary[uid].read)}</td>
+                const table = document.getElementById('usage-summary'); table.innerHTML = "";
+                for (const uid in users) {
+                    table.innerHTML += `<tr>
+                        <td>${uid.substring(0,10)}...</td>
+                        <td style="color:var(--green)"><b>${formatTime(users[uid].usage)}</b></td>
+                        <td>${formatTime(users[uid].read)}</td>
                     </tr>`;
                 }
             });
         }
 
-        function formatTime(seconds) {
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = Math.floor(seconds % 60);
-            return `${h}h ${m}m ${s}s`;
+        function formatTime(s) {
+            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60);
+            return `${h}h ${m}m ${sec}s`;
         }
 
-        // Initialize
+        function logoutAdmin() { if(confirm("Logout?")) window.location.href = "index.html"; }
+
         loadBooks();
         loadLogs();
     </script>
