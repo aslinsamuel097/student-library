@@ -11,13 +11,12 @@
     <style>
         :root { --blue: #3b82f6; --orange: #f97316; --green: #10b981; --red: #ef4444; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --border: #334155; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        .nav-tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 15px; gap: 10px; position: sticky; top: 0; z-index: 100; }
-        .tab-btn { padding: 15px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 600; font-size: 14px; color: var(--text); opacity: 0.6; }
+        .nav-tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 15px; gap: 10px; }
+        .tab-btn { padding: 15px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 600; opacity: 0.6; }
         .tab-btn.active { border-color: var(--blue); opacity: 1; color: var(--blue); }
-        .container { padding: 15px; }
-        .card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid var(--border); margin-bottom: 15px; }
-        input, select, button { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; box-sizing: border-box; }
-        .list-item { background: #161e2e; padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; }
+        .card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid var(--border); margin: 15px; }
+        input, select, button { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; }
+        .list-item { background: #161e2e; padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); cursor: pointer; }
         .hidden { display: none !important; }
         .breadcrumb { font-size: 11px; color: var(--blue); margin-bottom: 10px; cursor: pointer; }
     </style>
@@ -37,34 +36,30 @@
             <div class="tab-btn active" id="t1" onclick="switchTab('inventory')">📦 Management</div>
             <div class="tab-btn" id="t2" onclick="switchTab('attendance')">⏱️ Attendance</div>
         </div>
-        <div class="container">
-            <div id="p-inventory">
-                <div class="card">
-                    <h2>📚 Add Book</h2>
-                    <input type="text" id="b-title" placeholder="Title">
-                    <input type="text" id="b-id" placeholder="File ID (must match GitHub exactly)">
-                    <input type="text" id="b-colls" placeholder="Colleges (comma separated)">
-                    <button onclick="addBook()" style="background:var(--blue)">Register</button>
+        <div id="p-inventory" class="card">
+            <h2>Add Book</h2>
+            <input type="text" id="b-id" placeholder="Book ID (Exact Filename)">
+            <input type="text" id="b-title" placeholder="Display Title">
+            <input type="text" id="b-colls" placeholder="Allowed Colleges (IMC26, etc)">
+            <button onclick="addBook()" style="background:var(--blue)">Register Book</button>
+        </div>
+        <div id="p-attendance" class="hidden">
+            <div class="card">
+                <div id="view-colleges"><div id="coll-list"></div></div>
+                <div id="view-students" class="hidden">
+                    <div class="breadcrumb" onclick="showCollegesNav()">← Back to Colleges</div>
+                    <div id="stud-list"></div>
                 </div>
-            </div>
-            <div id="p-attendance" class="hidden">
-                <div class="card">
-                    <div id="view-colleges"><div id="coll-list"></div></div>
-                    <div id="view-students" class="hidden">
-                        <div class="breadcrumb" onclick="showCollegesNav()">← Back</div>
-                        <div id="stud-list"></div>
+                <div id="view-details" class="hidden">
+                    <div class="breadcrumb" onclick="showStudentsNavBtn()">← Back to Students</div>
+                    <h3 id="det-name"></h3>
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:15px;">
+                        <div class="card" style="margin:0; text-align:center;">Usage<br><b id="s1" style="color:var(--green)">0s</b></div>
+                        <div class="card" style="margin:0; text-align:center;">Preview<br><b id="s2" style="color:var(--blue)">0s</b></div>
+                        <div class="card" style="margin:0; text-align:center;">Full Read<br><b id="s3" style="color:var(--orange)">0s</b></div>
                     </div>
-                    <div id="view-details" class="hidden">
-                        <div class="breadcrumb" onclick="showStudentsNavBtn()">← Back</div>
-                        <h3 id="det-name"></h3>
-                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:15px;">
-                            <div class="card" style="margin:0; text-align:center;">Usage<br><b id="s1" style="color:var(--green)">0s</b></div>
-                            <div class="card" style="margin:0; text-align:center;">Preview<br><b id="s2" style="color:var(--blue)">0s</b></div>
-                            <div class="card" style="margin:0; text-align:center;">Full Read<br><b id="s3" style="color:var(--orange)">0s</b></div>
-                        </div>
-                        <button onclick="downloadCSV()" style="background:var(--green)">Export CSV</button>
-                        <div id="det-logs"></div>
-                    </div>
+                    <button onclick="downloadCSV()" style="background:var(--green)">📊 Export CSV</button>
+                    <div id="det-logs"></div>
                 </div>
             </div>
         </div>
@@ -73,14 +68,14 @@
     <script>
         const firebaseConfig = { apiKey: "AIzaSyBBZ5Yvd7XH4lymNq2vIp-cwxPba55upWg", authDomain: "theolib.in", projectId: "student-library-4a4e7", storageBucket: "student-library-4a4e7.firebasestorage.app", messagingSenderId: "827419448917", appId: "1:827419448917:web:4b0d1084e6f1fe1b2566dc" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
-        let allUsers = []; let currentLogs = []; let currentStudentName = "";
+        let allUsers = []; let currentLogs = [];
 
         async function checkAuth() { if(document.getElementById('admin-id').value === 'admin' && document.getElementById('admin-pass').value === 'theo777') { document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('main-portal').classList.remove('hidden'); loadAttendance(); } }
         function switchTab(t) { document.getElementById('p-inventory').classList.toggle('hidden', t!=='inventory'); document.getElementById('p-attendance').classList.toggle('hidden', t!=='attendance'); }
         
         async function addBook() { 
-            const id = document.getElementById('b-id').value, title = document.getElementById('b-title').value, colls = document.getElementById('b-colls').value.split(',');
-            await db.collection("library_settings").doc(id).set({ title, allowedColleges: colls, language: 'English', recent: true }); alert("Registered");
+            const id = document.getElementById('b-id').value, title = document.getElementById('b-title').value, colls = document.getElementById('b-colls').value.split(',').map(s=>s.trim());
+            await db.collection("library_settings").doc(id).set({ title, allowedColleges: colls, recent: true }); alert("Registered");
         }
 
         function loadAttendance() {
@@ -101,7 +96,7 @@
         }
 
         function showStudentDetails(uid) {
-            const u = allUsers.find(x => x.id === uid); currentStudentName = u.fullName;
+            const u = allUsers.find(x => x.id === uid);
             document.getElementById('view-students').classList.add('hidden'); document.getElementById('view-details').classList.remove('hidden');
             document.getElementById('det-name').innerText = u.fullName;
 
@@ -112,7 +107,7 @@
                     const l = doc.data(); const dur = l.endTime ? Math.round((l.endTime - l.startTime) / 1000) : 0;
                     if(l.type === "Usage") usage += dur; if(l.type === "Preview Read") preview += dur; if(l.type === "Full Read") full += dur;
                     currentLogs.push({...l, dur});
-                    area.innerHTML += `<div style="font-size:11px; padding:5px; border-bottom:1px solid #334155;">${l.type}: ${formatTime(dur)}</div>`;
+                    area.innerHTML += `<div style="font-size:11px; padding:8px; border-bottom:1px solid #334155;"><b>${l.type}</b>: ${l.activity} (${formatTime(dur)})</div>`;
                 });
                 document.getElementById('s1').innerText = formatTime(usage); document.getElementById('s2').innerText = formatTime(preview); document.getElementById('s3').innerText = formatTime(full);
             });
@@ -121,7 +116,7 @@
         function formatTime(s) { return Math.floor(s/3600) + "h " + Math.floor((s%3600)/60) + "m " + (s%60) + "s"; }
         function showCollegesNav() { document.getElementById('view-colleges').classList.remove('hidden'); document.getElementById('view-students').classList.add('hidden'); }
         function showStudentsNavBtn() { document.getElementById('view-students').classList.remove('hidden'); document.getElementById('view-details').classList.add('hidden'); }
-        function downloadCSV() { /* CSV logic */ }
+        function downloadCSV() { /* CSV Download Logic */ }
     </script>
 </body>
 </html>
